@@ -1,0 +1,39 @@
+codec: 
+  video_codec_type: ffmpeg
+  encoder_path: third_party/video_codec/bin/ffmpeg
+  decoder_path: third_party/video_codec/bin/ffmpeg
+  encode_config_path: null
+  decode_config_path: null
+  
+  sort_type: plas
+
+  qp_config:
+    means_l: -1
+    means_u: -1
+    opacities: 4
+    quats_w: 4
+    quats_xyz: 4
+    scales: 4
+    sh0: 4
+    shN_sh1: 4
+    shN_sh2: 4
+    shN_sh3: 4
+
+  bit_depth_config:
+    means_l: 8
+    means_u: 8
+    opacities: 8
+    quats: 8
+    scales: 8
+    sh0: 8
+    shN: 8
+
+  pix_fmt_config:
+    means_l: yuv444p
+    means_u: yuv444p
+    opacities: yuv400p
+    quats_w: yuv400p
+    quats_xyz: yuv444p
+    scales: yuv444p
+    sh0: yuv444p
+    shN: yuv444p

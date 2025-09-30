@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vgsc"
+version = "0.1.0"
+description = "Video-based Gaussian Splat Coding framework"
+authors = [
+  { name="Zhiwei Zhu", email="zhuzhiwei21@zju.edu.cn" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.7"
+dependencies = [
+  "numpy",
+  "torch",
+  "plyfile",
+  "tyro",
+  "pyyaml",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
+
+
+[project.urls]
+"Homepage" = "https://github.com/zhuzhiwei99/VGSC"
+"Source" = "https://github.com/zhuzhiwei99/VGSC"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "__pycache__"]
+
+

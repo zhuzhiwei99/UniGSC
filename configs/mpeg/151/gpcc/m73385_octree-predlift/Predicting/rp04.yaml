@@ -1,0 +1,13 @@
+codec:
+  quant_type: N00677
+  encoder_path: third_party/pcc_codec/bin/gpcc/tmc3
+  decoder_path: third_party/pcc_codec/bin/gpcc/tmc3
+  encode_config_path: third_party/pcc_codec/cfg/gpcc/mpeg151/m73385_octree-predlift/Predicting/r04/encoder.cfg
+  decode_config_path: third_party/pcc_codec/cfg/gpcc/mpeg151/m73385_octree-predlift/Predicting/r04/decoder.cfg
+
+  use_sh0_ycbcr: true
+  use_shN_ycbcr: true
+  use_quats_norm: true
+  use_quats_posi_w: true
+
+  color_standard: BT470
