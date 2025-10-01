@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-01 03:18:08
+ * @LastEditTime: 2025-10-01 10:03:54
  * @Description: README for UniGSC - Video-based Gaussian Splat Coding
 -->
 
@@ -28,6 +28,25 @@
 ---
 
 ## 📊 Rate-Distortion Performance
+UniGSC provides a **one-stop benchmarking pipeline** for multiple codecs and configurations, enabling easy comparison across experiments. Below we show RD curves on the MPEG GSC dataset using different codecs and settings.
+<details>
+<summary>Commands to reproduce results on the <em>bartender</em> sequence:</summary>
+
+- Generate `MPEG GPCC JEE6.6 ` results using:
+```bash
+bash scripts/benchmark_with_configs.sh 1 bartender gpcc configs/gpcc/mpeg151/jee6.6
+```
+- Generate `MPEG Video-based GSC` results using:
+```bash
+bash scripts/benchmark_with_configs.sh 1 bartender vgsc configs/mpeg/151/video/video_anchor_ctc/
+```
+- Generate `UniGSC-VGSC` results using:
+```bash
+bash scripts/benchmark_with_configs.sh 1 bartender vgsc configs/mpeg/152/video/UniGSC-VGSC
+```
+Other datasets can be processed in the same way by replacing *bartender* with the target sequence name.
+</details>
+
 <p float="left">
   <img src="assets/rd_curve/bartender/RGB_PSNR.png" width="30%" />
   <img src="assets/rd_curve/breakfast/RGB_PSNR.png" width="30%" />
