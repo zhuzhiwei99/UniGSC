@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-01 10:03:54
+ * @LastEditTime: 2025-10-01 10:09:02
  * @Description: README for UniGSC - Video-based Gaussian Splat Coding
 -->
 
@@ -27,8 +27,8 @@
 
 ---
 
-## 📊 Rate-Distortion Performance
-UniGSC provides a **one-stop benchmarking pipeline** for multiple codecs and configurations, enabling easy comparison across experiments. Below we show RD curves on the MPEG GSC dataset using different codecs and settings.
+## 📊 Benchmark
+UniGSC provides a **one-stop benchmarking pipeline** for multiple codecs and configurations, enabling easy comparison across experiments. Below we show RD curves on the MPEG GSC dataset using different codecs and settings. We achieve **state-of-the-art performance** on multiple sequences.
 <details>
 <summary>Commands to reproduce results on the <em>bartender</em> sequence:</summary>
 
@@ -120,7 +120,7 @@ DATASET_NAME/
 
 
 
-### ▶️ Run UniGSC-VGSC (Video-based Gaussian Splat Codec) 
+### ▶️ Run UniGSC-VGSC (Video-based Gaussian Splats Codec) 
 Below is a simple example of running the UniGSC framework with FFmpeg as the video codec.
 You can switch to other codecs such as **HM** by replacing `ffmpeg` with `hm` in the commands.
 FFmpeg offers faster performance, while HM provides better compression at the cost of speed.
@@ -162,7 +162,7 @@ bash scripts/render_with_1_ply_dir.sh 1 bartender data/GSC_splats/m71763_bartend
 
 
 
-### ▶️ Run UniGSC-GPCC (PCC-based Gaussian Splat Codec)
+### ▶️ Run UniGSC-GPCC (PCC-based Gaussian Splats Codec)
 UniGSC also includes wrappers for point cloud codecs, such as the GSC extension of MPEG GPCC, allowing Gaussian splats to be compressed as point clouds.
 
 To run the MPEG GPCC codec (TMC13), use the following command:
