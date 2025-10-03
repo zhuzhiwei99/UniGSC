@@ -3,7 +3,7 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-03 21:55:06
+ # @LastEditTime: 2025-10-03 23:48:31
  # @FilePath: /UniGSC/scripts/mpeg/1f_optional_render.sh
  # @Description: 
  # 
@@ -13,7 +13,7 @@
 FRAME_NUM=1
 RENDER=gsplat  # Currently only supports "gsplat", #TODO: add "mpeg-3d-renderer" or "mpeg-gsc-metrics"
 forward_facing_seq=""  # e.g., "bartender cinema" in m73341_pruned_sequences    
-object_centric_seq="LEGO_Bugatti LEGO_Ferrari Plant Solo_Tango_Female Solo_Tango_Male Tango_duo Tennis_player" # Cricket_player
+object_centric_seq="Cricket_player LEGO_Bugatti LEGO_Ferrari Plant Solo_Tango_Female Solo_Tango_Male Tango_duo Tennis_player"
 
 # --- Utility: find GPU with max free memory ---
 get_best_gpu() {
