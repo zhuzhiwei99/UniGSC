@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-01 10:09:02
+ * @LastEditTime: 2025-10-03 23:31:21
  * @Description: README for UniGSC - Video-based Gaussian Splat Coding
 -->
 
@@ -19,33 +19,19 @@
 
 ## ✨ Highlights
 
-- 🎯 **High-Efficiency Compression** for Gaussian splats
-- 🧩 **Modular Architecture** for algorithm and codec integration
-- 📦 Support for multiple **core codecs** (e.g., FFmpeg, HM, G-PCC)
-- 📈 Built-in **evaluation tools** (LPIPS, PSNR, etc.)
-- 📜 Support for **MPEG GSC (Gaussian Splat Coding)** workflows
+- 🎯 **High-Efficiency Compression** tailored for Gaussian splats  
+- 🧩 **Modular Architecture** enabling seamless algorithm and codec integration  
+- 💻 **User-Friendly CLI** and Python API for flexible experimentation  
+- 🛠️ **Comprehensive Tools** for logging, visualization, and benchmarking  
+- 📦 Support for multiple **core codecs** (e.g., FFmpeg, HM, G-PCC)  
+- 📜🌐 Built-in support for **MPEG GSC (Gaussian Splat Coding)** workflows  
 
 ---
 
 ## 📊 Benchmark
 UniGSC provides a **one-stop benchmarking pipeline** for multiple codecs and configurations, enabling easy comparison across experiments. Below we show RD curves on the MPEG GSC dataset using different codecs and settings. We achieve **state-of-the-art performance** on multiple sequences.
-<details>
-<summary>Commands to reproduce results on the <em>bartender</em> sequence:</summary>
 
-- Generate `MPEG GPCC JEE6.6 ` results using:
-```bash
-bash scripts/benchmark_with_configs.sh 1 bartender gpcc configs/gpcc/mpeg151/jee6.6
-```
-- Generate `MPEG Video-based GSC` results using:
-```bash
-bash scripts/benchmark_with_configs.sh 1 bartender vgsc configs/mpeg/151/video/video_anchor_ctc/
-```
-- Generate `UniGSC-VGSC` results using:
-```bash
-bash scripts/benchmark_with_configs.sh 1 bartender vgsc configs/mpeg/152/video/UniGSC-VGSC
-```
-Other datasets can be processed in the same way by replacing *bartender* with the target sequence name.
-</details>
+The results can be reproduced using the scripts in the [Quick Start](#-quick-start) section.
 
 <p float="left">
   <img src="assets/rd_curve/bartender/RGB_PSNR.png" width="30%" />
@@ -62,8 +48,8 @@ cd UniGSC
 ```
 Set up environment
 ```bash
-conda create --name gsc python=3.10
-conda activate gsc
+conda create --name UniGSC python=3.10
+conda activate UniGSC
 ```
 
 Please install PyTorch first, you can choose the right command from [Pytorch](https://pytorch.org/get-started/locally/). For example, for CUDA 11.8:
@@ -82,12 +68,41 @@ pip install -r requirements.txt
 ---
 
 ## ⚡ Quick Start
-Before running the scripts, please ensure your dataset is correctly placed under the `data/` directory with the structure shown below:
+
+### 📚 Prepare Dataset
+Before running the scripts, make sure your dataset is placed in the `data/` directory and follows the recommended structure shown below:
+
 <details>
-<summary>Dataset structure</summary>
+<summary>Static Dataset structure</summary>
 
 ```bash
-DATASET_NAME/
+Static_dataset_name/
+├── xxx.ply
+│
+└── colmap_data
+    ├── images
+    │   ├── 0000.png
+    │   ├── 0001.png
+    │   └── ...
+    │   
+    ├── sparse(/0)
+    │   ├── cameras.bin
+    │   ├── images.bin
+    │   └── points3D.bin
+    │
+    └── (mask)
+        ├── 0000.png
+        ├── 0001.png
+        └── ...
+```
+</details>
+
+
+<details>
+<summary>Dynamic Dataset structure</summary>
+
+```bash
+Dynamic_dataset_name/
 ├── plys
 │   ├── frame_0000.ply
 │   ├── frame_0001.ply
@@ -101,94 +116,129 @@ DATASET_NAME/
     │   │   ├── 0001.png
     │   │   └── ...
     │   │   
-    │   └── sparse
-    │       ├── cameras.bin
-    │       ├── images.bin
-    │       └── points3D.bin
+    │   ├── sparse(/0)
+    │   │   ├── cameras.bin
+    │   │   ├── images.bin
+    │   │   └── points3D.bin
+    │   │
+    │   └── (mask)
+    │       ├── 0000.png
+    │       ├── 0001.png
+    │       └── ...
     │
     └── frame_NNNN
         ├── images
         │   ├── 0000.png
         │   ├── 0001.png
         │   └── ...
-        └── sparse
-            ├── cameras.bin
-            ├── images.bin
-            └── points3D.bin
+        ├── sparse(/0)
+        │   ├── cameras.bin
+        │   ├── images.bin
+        │   └── points3D.bin
+        │
+        └── (mask)
+            ├── 0000.png
+            ├── 0001.png
+            └── ...
 ```
 </details>
 
+<!-- ### 🌐 One-Stop MPEG GSC Benchmark Platform
+Easily benchmark different MPEG GSC methods with our ready-to-use scripts.  
+The following commands run the **full pipeline** (🗜️ encoding → 🔄 decoding → 🎨 rendering → 📊 evaluation) across codecs and configurations.  
 
+💡 **Tip:** Render uncompressed views first — they serve as references for evaluation, so you won’t need to re-render them for each configuration.  
 
-### ▶️ Run UniGSC-VGSC (Video-based Gaussian Splats Codec) 
-Below is a simple example of running the UniGSC framework with FFmpeg as the video codec.
-You can switch to other codecs such as **HM** by replacing `ffmpeg` with `hm` in the commands.
-FFmpeg offers faster performance, while HM provides better compression at the cost of speed.
-
-We recommend using the provided configuration files in the `configs/` directory to specify codec settings.
-
-We have provided functional scripts to run the encoding, decoding, rendering, and evaluation steps. For each script, you can simply run `bash scripts/<script_name>.sh` to get the help message.
-
-#### 🚀 One-Click Compression & Evaluation
-To run the full compression and evaluation pipeline (including encoding, decoding, rendering, and evaluation using PSNR, SSIM, LPIPS, and MPEG GSC metrics (RGB_PSNR, YUV_PSNR, YUV_SSIM, etc.)), simply use:
+#### I-3DGS Main Track
+Automatically process all sequences defined in the MPEG GSC CTC.  
+Results will be saved in the `results/` directory.  
+- Render uncompressed Gaussian Splats:
 ```bash
-bash scripts/benchmark_with_configs.sh 1 bartender vgsc configs/ffmpeg/anchor_0.0
+bash scripts/mpeg/main_render.sh
 ```
-After running this command, you will find the results in the `results/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0` directory, including: intermediate yuv files, compressed bitstream, rendered views, and evaluation metrics.
-#### 🔧 Run Each Step Separately
-You can also execute each step individually:
-- Encode
-
+- Benchmark `MPEG GPCC JEE6.6`:
 ```bash
-bash scripts/encode_with_configs.sh 1 bartender vgsc configs/ffmpeg/anchor_0.0
+bash scripts/mpeg/main_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.6
 ```
-
-- Decode
-
+- Benchmark `MPEG Video-based GSC`:
 ```bash
-bash scripts/decode_with_configs.sh 1 bartender vgsc configs/ffmpeg/anchor_0.0
+bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/151/video/video_anchor_ctc/
 ```
-
-- Evaluate
-
+- Benchmark `UniGSC-VGSC`:
 ```bash
-bash scripts/eval_with_result_dirs.sh 1 bartender results/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0
-```
-- Render 
-
-```bash
-bash scripts/render_with_1_ply_dir.sh 1 bartender data/GSC_splats/m71763_bartender_stable/track
+bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/152/video/UniGSC-VGSC
 ```
 
 
-
-### ▶️ Run UniGSC-GPCC (PCC-based Gaussian Splats Codec)
-UniGSC also includes wrappers for point cloud codecs, such as the GSC extension of MPEG GPCC, allowing Gaussian splats to be compressed as point clouds.
-
-To run the MPEG GPCC codec (TMC13), use the following command:
-
+#### I-3dGS 1 frame Track 
+Automatically process all sequences defined in the MPEG GSC CTC for the **1f track**.
+Results will be saved in the `results/` directory.
+- Render uncompressed Gaussian Splats:
 ```bash
-bash scripts/benchmark_with_configs.sh 1 bartender gpcc configs/gpcc/mpeg151/jee6.6
+bash scripts/mpeg/1f_mandatory_render.sh
 ```
 
----
+- Benchmark `MPEG GPCC JEE6.2 `:
+```bash
+bash scripts/mpeg/1f_mandatory_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.2
+```
+- Benchmark `MPEG Video-based GSC`:
+```bash
+bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/151/video/video_anchor_ctc/
+```
+- Benchmark `UniGSC-VGSC`:
+```bash
+bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/152/video/UniGSC-VGSC
+```
+💡 For optional sequences, replace `mandatory` with `optional` in the script filenames. -->
+
+### 🌐 One-Stop MPEG GSC Benchmark Platform
+
+Easily benchmark different MPEG GSC methods with our ready-to-use scripts.  
+The full pipeline covers **🗜️ Encoding → 🔄 Decoding → 🎨 Rendering → 📊 Evaluation**.  
+
+💡 **Tip:** Render uncompressed views first — they serve as references, so you won’t need to re-render them for each configuration.
+
+
+#### 🎬 I-3DGS Main Track
+
+| Task | Command |
+|------|---------|
+| Render uncompressed Gaussian Splats | `bash scripts/mpeg/main_render.sh` |
+| Benchmark **MPEG GPCC JEE6.2** | `bash scripts/mpeg/main_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.2` |
+| Benchmark **MPEG Video-based GSC** | `bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/151/video/video_anchor_ctc/` |
+| Benchmark **UniGSC-VGSC** | `bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/152/video/UniGSC-VGSC` |
+
+Results will be saved in the `results/` directory.
+
+
+#### 🎬 I-3DGS 1-Frame Track
+
+| Task | Command |
+|------|---------|
+| Render uncompressed Gaussian Splats | `bash scripts/mpeg/1f_mandatory_render.sh` |
+| Benchmark **MPEG GPCC JEE6.6** | `bash scripts/mpeg/1f_mandatory_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.6` |
+| Benchmark **MPEG Video-based GSC** | `bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/151/video/video_anchor_ctc/` |
+| Benchmark **UniGSC-VGSC** | `bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/152/video/UniGSC-VGSC` |
+
+💡 For **optional sequences**, replace `mandatory` with `optional` in the script filenames.
 
 
 
-## 📁 Project Structure
+### 📁 `results/` Folder Overview
 
-| Directory      | Description                                                                 |
-| -------------- | --------------------------------------------------------------------------- |
-| `assets/`      | Demo assets, such as teaser images                                          |
-| `configs/`     | Configuration files for different compression settings                      |
-| `data/`        | Gaussian Splat datasets (PLY point clouds and COLMAP data)                  |
-| `datasets/`    | Dataset handling and loading scripts                                        |
-| `docs/`        | Documentation and installation guides                                       |
-| `results/`     | Encoded bitstreams, rendered views, evaluation metrics, etc.                |
-| `scripts/`     | Helper scripts for automating workflows                                     |
-| `third_party/` | External dependencies (e.g., FFmpeg, HM, GPCC, fine-tuning tools)           |
-| `utils/`       | Utility functions (I/O, metrics, plotting, summaries, etc.)                 |
-| `gsc/`        | Core framework modules (codecs, mapping, preprocessing, quantization, etc.) |
+| Name | Type | Description |
+|------|------|-------------|
+| `compression` | Directory | Compressed bitstreams produced by the codec. |
+| `config` | Directory | Configuration files for each experiment. |
+| `intermediate` | Directory | Temporary files from pre-processing and quantization steps. |
+| `log` | Directory | Logs for the full pipeline. |
+| `reconstructed` | Directory | Reconstructed Gaussian splats after decoding. |
+| `renders` | Directory | Rendered images from uncompressed/reconstructed data. |
+| `stats` | Directory | Evaluation statistics including bitrate, quality, timing, and plots. |
+| `yuv` | Directory | Intermediate YUV video files used as codec input/output. |
+| `rd_summary_GT.json` | File | Rate-Distortion metrics using ground truth images as reference. |
+| `rd_summary_rendered.json` | File | Rate-Distortion metrics using uncompressed Gaussian Splat renders as reference. |
 
 
 ---
@@ -205,15 +255,15 @@ We have provided prebuilt binaries for FFmpeg, HM and GPCC under `third_party/vi
 To use custom codecs, place your encoder and decoder binaries in `third_party/video_codec/bin/` and and update the configuration accordingly.
 
 ### ⚙️ Configuration Files
-UniGSC supports multiple codecs. You must specify the codec type and its corresponding settings via either command-line arguments or a YAML configuration file. The description of each command-line arguments can be found by running:
+UniGSC supports multiple codecs. You must specify the codec type and its corresponding settings via either command-line arguments or a `YAML` configuration file. The description of each command-line arguments can be found by running:
 ```bash
 python gs_pipeline.py vgsc --help
 python gs_pipeline.py gpcc --help
 ```
 
-We recommend using YAML for better organization and maintainability. For complex experiments, you can create separate configuration files for different settings. 
+We recommend using `YAML` for better organization and maintainability. For complex experiments, you can create separate configuration files for different settings. 
 
-Configuration files are located in the `configs/` directory. Example configurations include:
+Configuration files are located in the `configs/` directory. Example configurations:
 <details> <summary>📄 <code>vgsc_config_example.yaml</code> </summary>
 This example shows a typical configuration for UniGSC using FFmpeg. Not all fields are required—if omitted, default values will be used. You can override any of them via command-line arguments when running the scripts.
 
@@ -230,10 +280,10 @@ codec:
   prune_thres_opacities: -4
   
   # Transform options
-  use_quats_norm: true
-  use_sh0_ycbcr: false
-  use_shN_pca: true
-  shN_rank: 21
+  trans_quats_norm: true
+  trans_sh0_ycbcr: false
+  trans_shN_pca: true
+  trans_shN_rank: 21
 
   # Quantize options
   quant_type: video_N01292
@@ -314,11 +364,110 @@ If you are interested in MPEG GSC workflows, please refer to the configurations 
 - GPCC-based GSC: `configs/mpeg/151/gpcc/jee6.6/r04.yaml`
 
 
-### 🐍 Using the UniGSC Python API
+
+
+### 💻 Command-Line Interface
+We provide command-line scripts to encode, decode, render, and evaluate Gaussian splats with different codecs:
+| Script              | Description                                              |
+| ------------------- | -------------------------------------------------------- |
+| `gsc/runner.py`      | Defines the core workflow: pre_process, quantize, encode, decode, dequantize, and post_process of Gaussian splats |
+| `gs_pipeline.py`    | Entry point for running experiments with different pipelines                                    |
+
+
+
+🎯 Supported GSCodec Types
+- `vgsc`: Video-based Gaussian Splat Coding 
+- `gpcc`: GPCC-based Gaussian Splat Coding 
+
+▶️ Example Command
+
+```bash
+CUDA_VISIBLE_DEVICES=0 python gs_pipeline.py \
+    vgsc \
+    --config configs/ffmpeg/anchor_0.0.yaml \
+    --pipe_stage benchmark \
+    --ply_dir ./data/scene/ply \
+    --data_dir ./data/scene/colmap \
+    --result_dir ./results/scene_anchor_0.0 \
+    --frame_num 50 \
+    --test_view_id 0 \
+    --codec.gop_size 16
+```
+
+ℹ️ Get Help
+
+```bash
+python gs_pipeline.py vgsc --help
+python gs_pipeline.py gpcc --help
+```
+
+## 📝 Scripts for Common Workflows
+### ▶️ Run UniGSC-VGSC (Video-based Gaussian Splats Codec) 
+Run the UniGSC framework with **FFmpeg** as the video codec. To switch to other codecs (e.g., **HM**), replace `ffmpeg` with `hm`.  
+> FFmpeg: faster; HM: higher compression at the cost of speed.
+
+Use the provided configuration files in `configs/` to specify codec settings. 
+
+Run `bash scripts/<script_name>.sh` for help on each script.
+
+#### One-Click Benchmark
+```bash
+bash scripts/benchmark.sh 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0
+```
+Results are saved in: `results/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0`.
+#### Run Steps Individually
+
+You can also execute each step individually:
+| Step | Command |
+|------|---------|
+| 🗜️ **Encode** | ```bashbash scripts/encode.sh 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0``` |
+| 🔄 **Decode** | ```bashbash scripts/decode.sh 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0``` |
+| 📊 **Evaluate** | ```bashbash scripts/eval.sh 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0``` |
+
+
+<!-- - Render
+
+```bash
+bash scripts/render.sh 1 bartender data/GSC_splats/m71763_bartender_stable/track
+```
+
+- Encode
+
+```bash
+bash scripts/encode.sh 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0
+```
+
+- Decode
+
+```bash
+bash scripts/decode.sh 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0
+```
+
+- Evaluate
+
+```bash
+bash scripts/eval.sh 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0
+``` -->
+
+
+
+
+### ▶️ Run UniGSC-GPCC (PCC-based Gaussian Splats Codec)
+UniGSC also supports point cloud codecs, e.g., MPEG GPCC (TMC13), allowing Gaussian splats to be compressed as point clouds.
+
+Benchmark the MPEG GPCC codec using:
+
+```bash
+bash scripts/benchmark.sh 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track gpcc configs/gpcc/mpeg151/jee6.6
+```
+
+
+
+## 🐍 Using the UniGSC Python API
 In short, the UniGSC Python API allows researchers and developers to:
 
-* Load and preprocess Gaussian splat datasets
-* Apply pruning, transforms, and PCA-based SH compression
+* Load Gaussian splat datasets
+* Apply pre-processing, including pruning, transformation, etc.
 * Perform flexible quantization with customizable bit depth and channel control
 * Encode and decode splats with video or point cloud codecs
 * Render and evaluate reconstructed results
@@ -367,43 +516,23 @@ runner.eval()
 ```
 ---</details>
 
-### 💻 Command-Line Interface
-We provide command-line scripts to encode, decode, render, and evaluate Gaussian splats with different codecs:
-| Script              | Description                                              |
-| ------------------- | -------------------------------------------------------- |
-| `gsc/runner.py`      | Defines the core workflow: pre_process, quantize, encode, decode, dequantize, and post_process of Gaussian splats |
-| `gs_pipeline.py`    | Entry point for running experiments with different pipelines                                    |
+
+## 📁 Project Structure
+
+| Directory      | Description                                                                 |
+| -------------- | --------------------------------------------------------------------------- |
+| `assets/`      | Demo assets, such as teaser images                                          |
+| `configs/`     | Configuration files for different compression settings                      |
+| `data/`        | Gaussian Splat datasets (PLY point clouds and COLMAP data)                  |
+| `datasets/`    | Dataset handling and loading scripts                                        |
+| `docs/`        | Documentation and installation guides                                       |
+| `results/`     | Encoded bitstreams, rendered views, evaluation metrics, etc.                |
+| `scripts/`     | Helper scripts for automating workflows                                     |
+| `third_party/` | External dependencies (e.g., FFmpeg, HM, GPCC, fine-tuning tools)           |
+| `utils/`       | Utility functions (I/O, metrics, plotting, summaries, etc.)                 |
+| `gsc/`        | Core framework modules (codecs, mapping, preprocessing, quantization, etc.)  |
 
 
-
-🎯 Supported GSCodec Types
-- `vgsc`: Video-based Gaussian Splat Coding 
-- `gpcc`: GPCC-based Gaussian Splat Coding 
-
-▶️ Example Command
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python gs_pipeline.py \
-    vgsc \
-    --config configs/ffmpeg/anchor_0.0.yaml \
-    --pipe_stage benchmark \
-    --ply_dir ./data/scene/ply \
-    --data_dir ./data/scene/colmap \
-    --result_dir ./results/scene_anchor_0.0 \
-    --frame_num 50 \
-    --test_view_id 0 \
-    --codec.gop_size 16
-```
-
-ℹ️ Get Help
-
-```bash
-python gs_pipeline.py vgsc --help
-python gs_pipeline.py gpcc --help
-```
-
-
----
 
 ## 📄 Citation
 

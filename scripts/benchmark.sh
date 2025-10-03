@@ -3,31 +3,40 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-01 03:36:10
- # @FilePath: /UniGSC/scripts/benchmark_gsc_static_with_configs.sh
+ # @LastEditTime: 2025-10-03 20:07:11
+ # @FilePath: /UniGSC/scripts/benchmark.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
 ### 
 
-# 检查参数数量
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <codec_type> <config_dir> <ply_dir>"
-    echo "  codec_type: type of codec to use (eg. \"vgsc\" or \"gpcc\")"
+# check if the correct number of arguments is provided
+if [ "$#" -ne 6 ]; then
+    echo "Usage: $0 <frame_num> <scene_type> <data_dir> <ply_dir> <codec_type> <config_dir>"
+    echo "  frame_num: number of frames to process (eg. 1, 2, 3, etc.)"
+    echo "  scene_type: type of scene (e.g., 'gsc_dynamic' for an MPEG GSC dynamic scene, 'gsc_static' for an MPEG GSC static scene)"
+    echo "  data_dir:  directory containing images and colmap data (eg. 'data/GSC_splats/m71763_bartender_stable/colmap_data')"
+    echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
+    echo "  codec_type: type of codec to use (eg. 'vgsc' or 'gpcc')"
     echo "  config_dir: path to the directory containing configuration files"
-    echo "  ply_dir: path to the directory containing 1 ply file"
-    echo "Example: $0 vgsc configs/mpeg/151/video_anchor_ctc data/GSC_static/Solo_Tango_Male "
+    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0"
     exit 1
 fi
 
-codec_type=$1
-config_dir=$2
-ply_dir=$3
-colmap_dir_name=colmap_SFM
+FRAME_NUM=$1
 
-PLY_DIR=$ply_dir
-DATA_DIR=$PLY_DIR/$colmap_dir_name
-RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|results|')/${config_dir}
+SCENE_TYPE=$2
+DATA_DIR=$3
+PLY_DIR=$4
+
+codec_type=$5
+config_dir=$6
+
+RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|results|')/frame${FRAME_NUM}/${config_dir}_trans_shN_pca
+ORI_RENDER_DIR=$(echo "$PLY_DIR" | sed 's|^data|renders/gsplat|')/frame${FRAME_NUM}
+
+# Default all views as test views, if needed, specify test views via --test_view_id in run_experiment function, e.g., --test_view_id 0 1 2 3 4 5 6 7
+
 
 # Function to run a single experiment
 run_experiment() {
@@ -43,12 +52,16 @@ run_experiment() {
         --data_factor 1 \
         --data_dir $DATA_DIR \
         --ply_dir $PLY_DIR \
+        --ori_render_dir ${ORI_RENDER_DIR} \
         --result_dir ${RESULT_DIR}/${rp_id} \
-        --lpips_net alex \
+        --lpips_net vgg \
         --no-normalize_world_space \
-        --scene_type GSC_static \
-        --frame_num 1 \
-        --codec.gop_size 1 \
+        --scene_type $SCENE_TYPE \
+        --frame_num ${FRAME_NUM} \
+        --codec.gop_size 16 \
+        --codec.trans_shN_pca 
+
+
 }
 
 # Function to automatically detect the best GPU based on available memory
@@ -80,5 +93,4 @@ wait
 echo "All experiments completed"
 
 # Run the Python script to generate CSV after all experiments
-python utils/summary/RD_stats_to_csv.py --results_dir ${RESULT_DIR}
 python utils/summary/summarize_stats.py --results_dir $RESULT_DIR 

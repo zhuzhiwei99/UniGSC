@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
 Date: 2025-07-06 18:28:46
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-10-01 02:01:03
-FilePath: /VGSC/gsc/config.py
+LastEditTime: 2025-10-03 00:55:46
+FilePath: /UniGSC/gsc/config.py
 Description: Macro and configuration definitions for the VGSC library.
 
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -85,4 +85,14 @@ DEFAULT_QP = {
     "shN": 4,
 }
 
-
+ATTRIBUTE_MAP = {
+    "position": "means",
+    "sh0": "sh0",
+    "sh1": "shN_sh1",
+    "sh2": "shN_sh2",
+    "sh3": "shN_sh3",  
+    "rotation": "quats",
+    "scaling": "scales",
+    "opacity": "opacities",
+    "metadata": "meta",
+}

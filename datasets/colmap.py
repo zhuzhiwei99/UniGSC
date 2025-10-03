@@ -160,20 +160,15 @@ class Parser:
             if not os.path.exists(d):
                 raise ValueError(f"Image folder {d} does not exist.")
 
-        # Downsampled images may have different names vs images used for COLMAP,
-        # so we need to map between the two sorted lists of files.
-        # if os.path.exists(os.path.join(data_dir, "masks")): # Temporal warkaround on New Dataset, use Mask dir to verify
-        #     import re
-        #     colmap_files = sorted(_get_rel_paths(colmap_image_dir), key=lambda x: int(re.search(r'cam_(\d+)_', x).group(1)))
-        #     image_files = sorted(_get_rel_paths(image_dir), key=lambda x: int(re.search(r'cam_(\d+)_', x).group(1)))
-        # else:
         colmap_files = sorted(_get_rel_paths(colmap_image_dir))
         image_files = sorted(_get_rel_paths(image_dir))
 
         colmap_to_image = dict(zip(colmap_files, image_files))
         image_paths = [os.path.join(image_dir, colmap_to_image[f]) for f in image_names]
         if os.path.exists(mask_dir):
-            mask_paths = [os.path.join(mask_dir, colmap_to_image[f].replace('jpg', 'png')) for f in image_names]
+            mask_files = sorted(_get_rel_paths(mask_dir))
+            colmap_to_mask = dict(zip(colmap_files, mask_files))
+            mask_paths = [os.path.join(mask_dir, colmap_to_mask[f]) for f in image_names]
         else:
             mask_paths = None
         # 3D points and {image_name -> [point_idx]}

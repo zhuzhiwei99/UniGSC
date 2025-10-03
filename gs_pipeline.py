@@ -64,6 +64,7 @@ def eval(runner: Runner, compress_stats=None):
 
 def encode(runner: Runner):
     runner.logger.info("Starting encoding process...")  
+    s_time = time.time()
     load_quantized = runner.load_quant_ply_sequences()
     if not load_quantized:
         runner.load_ply_sequences(runner.cfg.ply_dir) 
@@ -76,10 +77,14 @@ def encode(runner: Runner):
         runner.gpcc_encode()
     else:
         raise NotImplementedError(f"{type(runner.cfg.codec).__name__} has not been implemented.")
+    duration = time.time() - s_time
+    runner.save_info(duration, "total_enc_time")
+    runner.logger.info(f"Total encoding time: {duration:.2f} seconds.")
     
     
 def decode(runner: Runner):
     runner.logger.info("Starting decoding process...")
+    s_time = time.time()
     
     if isinstance(runner.cfg.codec, VgscCodecConfig):
         runner.vgsc_decode()
@@ -90,6 +95,9 @@ def decode(runner: Runner):
         
     runner.dequantize()  
     runner.postprocess()
+    duration = time.time() - s_time
+    runner.save_info(duration, "total_dec_time")
+    runner.logger.info(f"Total decoding time: {duration:.2f} seconds.")
     
     if runner.cfg.codec.save_rec_ply:
         runner.save_ply()

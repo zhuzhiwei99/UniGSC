@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
 Date: 2025-07-06 18:28:46
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-10-01 00:40:31
-FilePath: /VGSC/vgsc/pre_post_process/transform.py
+LastEditTime: 2025-10-03 00:53:14
+FilePath: /UniGSC/gsc/pre_post_process/transform.py
 Description: Transform splats parameters between different domains, such as log transform for means, RGB to YCbCr for SH coefficients, and quaternion normalization.
 
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -237,7 +237,7 @@ def seq_sh_pca_transform(splats_list: List[Dict[str, Tensor]], pca_info_dir: str
             npz_dict[f"{fid}_std"] = std.detach().cpu().numpy()
 
     # Save all to one .npz file
-    pca_info_path = os.path.join(pca_info_dir, "shN_pca_meta.npz")
+    pca_info_path = os.path.join(pca_info_dir, "meta_shN_pca.npz")
     np.savez_compressed(pca_info_path, **npz_dict)
     logger.info(f"Sucessfully performed PCA transform on shN and saved PCA info to {pca_info_path}")
     return splats_list
@@ -253,7 +253,7 @@ def seq_sh_pca_inverse_transform(splats_list: List[Dict[str, Tensor]], pca_info_
     Returns:
         List[Dict[str, Tensor]]: List of splats parameters with shN transformed back to original domain.
     """
-    npz_path = os.path.join(pca_info_dir, "shN_pca_meta.npz")
+    npz_path = os.path.join(pca_info_dir, "meta_shN_pca.npz")
     npz_dict = np.load(npz_path)
     device = splats_list[0]["shN"].data.device 
 

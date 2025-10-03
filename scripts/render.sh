@@ -3,44 +3,32 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-08-14 10:24:29
- # @FilePath: /VGSC/scripts/render.sh
+ # @LastEditTime: 2025-10-03 20:05:59
+ # @FilePath: /UniGSC/scripts/render.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
 ### 
 
-# 检查参数数量
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <frame_num> <dataset> <ply_dir>"
+# check if the correct number of arguments is provided
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <frame_num> <scene_type> <ply_dir> <data_dir>"
     echo "  frame_num: number of frames to process (eg. 1, 2, 3, etc.)"
-    echo "  dataset: dataset name (eg. \"bartender, breakfast, cinema, bust\")"
-    echo "  ply_dir: path to the directory containing Gaussian splats files"
-    echo "Example: $0 1 bartender track"
+    echo "  scene_type: type of scene (e.g., 'gsc_dynamic' for an MPEG GSC dynamic scene, 'gsc_static' for an MPEG GSC static scene)"
+    echo "  ply_dir: path to the directory containing Gaussian splats ply files"
+    echo "  data_dir: path to the directory containing COLMAP data"
+    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/track data/GSC_splats/m71763_bartender_stable/colmap_data"
     exit 1
 fi
 
-frame_num=$1
-dataset=$2
-ply_dir=$3
+FRAME_NUM=$1
+SCENE_TYPE=$2
+PLY_DIR=$3
+DATA_DIR=$4
 
-DATA_DIR=data/GSC_splats/m71763_${dataset}_stable/colmap_data 
-PLY_DIR=data/GSC_splats/m71763_${dataset}_stable/${ply_dir}
-RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|renders/gsplat|')
+RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|renders/gsplat|')/frame$FRAME_NUM
 
-if [ "$dataset" == "bartender" ]; then
-    test_view_id="$(echo {0..20})"  
-elif [ "$dataset" == "breakfast" ]; then
-    test_view_id="$(echo {0..14})"  
-elif [ "$dataset" == "cinema" ]; then
-    test_view_id="$(echo {0..20})"
-elif [ "$dataset" == "fruit" ]; then
-    test_view_id="$(echo {0..23})"
-else
-    echo "Unknown dataset: $dataset"
-    exit 1
-fi
-
+# Default all views as test views, if needed, specify test views via --test_view_id in run_experiment function, e.g., --test_view_id 0 1 2 3 4 5 6 7
 
 # Function to run a single experiment
 run_experiment() {
@@ -57,10 +45,8 @@ run_experiment() {
         --result_dir $RESULT_DIR \
         --lpips_net vgg \
         --no-normalize_world_space \
-        --scene_type GSC \
-        --frame_num ${frame_num} \
-        --test_view_id ${test_view_id} \
-
+        --scene_type $SCENE_TYPE \
+        --frame_num ${FRAME_NUM} 
 }
 
 

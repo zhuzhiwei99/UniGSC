@@ -14,7 +14,8 @@ import yaml
 import imagecodecs
 from torch import Tensor
 from typing_extensions import Literal
-
+from matplotlib import pyplot as plt
+import pandas as pd
 # dataset
 from datasets.colmap import Dataset, GSCDataset, Parser
 # gsplat
@@ -23,19 +24,21 @@ from gsplat.strategy import DefaultStrategy, MCMCStrategy
 
 # VGSC
 from gsc import set_random_seed, init_logging, get_logger, deep_update_dict
+from gsc.utils.plot import plot_pie, group_data_auto_prefix
 from gsc.utils.file import force_make_dirs, safe_make_dirs, smart_load_meta, smart_save_meta
+from gsc.utils.color import COLOR_SPACE_STANDARD
+from gsc.utils.gs_io import load_ply, save_ply, load_ply_sequence, format_splats
 from gsc.pre_post_process.transform import param_transform, param_inverse_transform, seq_sh_pca_transform, seq_sh_pca_inverse_transform
 from gsc.pre_post_process.prune import prune_splats_list
-from gsc.utils.color import COLOR_SPACE_STANDARD
 from gsc.codec import VgscCodec, PccCodec
-from gsc.utils.gs_io import load_ply, save_ply, load_ply_sequence, format_splats
 from gsc.quantize.gs_quantize import (
     quantize_splats_list_jointly, 
     dequantize_splats_list_jointly,
     quantize_splats_list_seperately,
     dequantize_splats_list_seperately)
 from gsc.config import (
-    QUANT_CONFIG_KEYS, QUANT_CONFIG, QUANT_META_NAME, INFO_NAME,
+    QUANT_CONFIG_KEYS, QUANT_CONFIG, QUANT_META_NAME, 
+    INFO_NAME, ATTRIBUTE_MAP,
     DEFAULT_QP, SORT_TYPES,
     SUBSAMPLING_METHODS, UPSAMPLING_METHODS, 
 )
@@ -189,7 +192,7 @@ class Config:
     tb_save_image: bool = False                # Save images to TensorBoard
 
     # ---------------- Dataset / Scene ----------------
-    scene_type: Literal["GSC_static", "GSC", "default"] = "default"  # Scene type, default can be used for Mip-NeRF 360, Tanks and Temples, etc.
+    scene_type: Literal["gsc_static", "gsc_dynamic", "default"] = "default"  # Scene type, default can be used for Mip-NeRF 360, Tanks and Temples, etc.
     test_view_id: Optional[List[int]] = None    # Test view IDs; if None, use default split
     lpips_net: Literal["vgg", "alex"] = "alex"  # Network for LPIPS metric
     data_dir: str = ""                          # Directory of GT images
@@ -402,12 +405,13 @@ class Runner:
     def set_up_datasets(
         self, data_dir: str, frame_num: int, cfg: Config
     ) -> Tuple[List[Dataset], List[Dataset]]:
-        if self.cfg.scene_type == "GSC_static":
-            assert frame_num == 1, "For GSC_static, frame_num must be 1."
+        if self.cfg.scene_type == "gsc_static":
+            assert frame_num == 1, "For gsc_static, frame_num must be 1."
             folders = [data_dir]
         else:
             all_items = sorted(glob.glob(os.path.join(data_dir, "*")))
             folders = [item for item in all_items if os.path.isdir(item)]
+            self.logger.info(f"Found {len(folders)} scene folders in {data_dir}.")
 
         trainset_list = []
         valset_list = []
@@ -546,9 +550,9 @@ class Runner:
             save_ply(splats, quant_ply_path)
         self.logger.info(f"Quantized splats saved to {quant_ply_dir}.")
         # Save quantization metadata
-        self.quant_meta_path = f"{self.compress_dir}/{QUANT_META_NAME}"
-        smart_save_meta(quant_meta, self.quant_meta_path)
-        self.logger.info(f"Quantization metadata saved to {self.quant_meta_path}.")
+        quant_meta_path = f"{self.compress_dir}/{QUANT_META_NAME}"
+        smart_save_meta(quant_meta, quant_meta_path)
+        self.logger.info(f"Quantization metadata saved to {quant_meta_path}.")
         self.logger.info(f"Quantization metadata:\n {quant_meta}")
 
     
@@ -556,7 +560,8 @@ class Runner:
         """De-quantize the splats_list and save to disk."""
         self.logger.info("De-quantizing splats after compression...")
         s_time = time.time()
-        quant_meta = smart_load_meta(self.quant_meta_path)
+        quant_meta_path = f"{self.compress_dir}/{QUANT_META_NAME}"
+        quant_meta = smart_load_meta(quant_meta_path)
         if self.cfg.codec.quant_seperate:
             dequant_splats_list = dequantize_splats_list_seperately(self.splats_list, quant_meta)
         else:
@@ -571,7 +576,7 @@ class Runner:
         s_time = time.time()        
         self.codec_method.encode(self.splats_list, self.compress_dir)
         duration = time.time() - s_time
-        self.save_info(duration, "Enc_time")
+        self.save_info(duration, "vgsc_enc_time")
         
     def vgsc_decode(self):
         self.logger.info("Running VGSC decoding...")
@@ -579,7 +584,7 @@ class Runner:
         splats_list_c = self.codec_method.decode(self.compress_dir)
         self.update_splats_list(splats_list_c)
         duration = time.time() - s_time
-        self.save_info(duration, "Dec_time")
+        self.save_info(duration, "vgsc_dec_time")
         
     def gpcc_encode(self):
         self.logger.info("Running GPCC encoding...")
@@ -589,7 +594,7 @@ class Runner:
             encoded_bin_path = f"{self.compress_dir}/frame{f_id:03d}.bin"
             self.codec_method.encode(quant_ply_path, encoded_bin_path)
         duration = time.time() - s_time
-        self.save_info(duration, "Enc_time")
+        self.save_info(duration, "gpcc_enc_time")
         
     def gpcc_decode(self):
         self.logger.info("Running GPCC decoding...")
@@ -601,7 +606,7 @@ class Runner:
             full_splats_list_c.append(new_splats)
         self.update_splats_list(full_splats_list_c)
         duration = time.time() - s_time
-        self.save_info(duration, "Dec_time")
+        self.save_info(duration, "gpcc_dec_time")
           
     def run(self):
         self.logger.info("Starting encoding process...")  
@@ -889,6 +894,18 @@ class Runner:
                 file_sizes[item] = size
                 total_size += size
 
+        file_sizes_grouped = {}
+        for key, value in ATTRIBUTE_MAP.items():
+            size = sum(size for fname, size in file_sizes.items() if fname.startswith(value))
+            file_sizes_grouped[key] = size
+
+        # save to json
+        with open(os.path.join(self.cfg.result_dir, "stats", "storage.json"), "w") as fp:
+            json.dump(file_sizes_grouped, fp, indent=4)
+                # plot pie chart
+        plot_pie(file_sizes_grouped, f"{self.cfg.result_dir}/stats/storage_pie_chart.png", title="Storage")
+
+            
         # Get bitrate
         Byte_to_Kbps = lambda filesize, n_frame: filesize / 1024 / n_frame * 8 * 30
         bitrate_Kbps = Byte_to_Kbps(total_size, self.frame_num)
@@ -900,7 +917,7 @@ class Runner:
         # Calculate percentage
         percentages = {name: (size / total_size) * 100 for name, size in file_sizes.items()}
     
-        # Create table data
+        # Storage breakdown table
         table_data = []
         for name, size in sorted(file_sizes.items(), key=lambda x: x[1], reverse=True):
             size_formatted = format_size(size)
@@ -909,7 +926,7 @@ class Runner:
         
         # Create pandas DataFrame for table
         df = pd.DataFrame(table_data, columns=["Filename", "Size", "Percentage"])
-        csv_path = os.path.join(self.cfg.result_dir, "stats", "memory_breakdown.csv")
+        csv_path = os.path.join(self.cfg.result_dir, "stats", "storage_detail.csv")
         df.to_csv(csv_path, index=False)
         self.logger.info(f"CSV file saved to: {csv_path}")
 

@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
 Date: 2025-07-06 18:28:46
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-08-12 11:45:11
-FilePath: /VGSC/vgsc/codec/video_codec.py
+LastEditTime: 2025-10-03 02:47:03
+FilePath: /UniGSC/gsc/codec/video_codec.py
 Description: A unified wrapper for various video codecs (vvenc, VTM, HM, ffmpeg).
 
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -158,7 +158,7 @@ class VideoCodec:
 
     def _build_ffmpeg_encode_cmd(self, i_path: str, o_path: str, p: Dict[str, Any]) -> List[str]:
         """Builds the encoding command for FFmpeg (e.g., using libx265)."""
-        for key in ['width', 'height', 'qp', 'pix_fmt', 'gop_size', 'use_all_intra', 'bit_depth']:
+        for key in ['width', 'height', 'qp', 'pix_fmt', 'gop_size', 'all_intra', 'bit_depth']:
             if key not in p:
                 raise ValueError(f"Missing required parameter for ffmpeg: '{key}'")
 
@@ -186,7 +186,7 @@ class VideoCodec:
             '-c:v', 'libx265',
             '-x265-params', qp_params,
         ]
-        if p.get('use_all_intra', False):
+        if p.get('all_intra', False):
             cmd.extend(['-g', '1'])  # GOP size of 1 means all-intra
         else:
             cmd.extend(['-g', str(p.get('gop_size', 16))])

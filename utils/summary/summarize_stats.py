@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
 Date: 2025-07-04 11:03:19
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-09-29 23:31:06
-FilePath: /VGSC/utils/summary/summarize_stats.py
+LastEditTime: 2025-10-03 02:06:48
+FilePath: /UniGSC/utils/summary/summarize_stats.py
 Description: 
 
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -21,6 +21,7 @@ def main(results_dir: str):
     summary_GT = defaultdict(dict)
     summary_rendered = defaultdict(dict)
     summary_info = defaultdict(dict)
+    summary_storage = defaultdict(dict)
     for rp in rps:
         rp_dir = os.path.join(results_dir, rp)
  
@@ -49,17 +50,23 @@ def main(results_dir: str):
         except:
             print(f"Could not find info.json in {rp_dir}/stats, skipping.")
             continue
+        
+        try:
+            with open(os.path.join(rp_dir, f"stats/storage.json"), "r") as f:
+                stats = json.load(f)
+                for k, v in stats.items():
+                    summary_storage[rp][k] = v
+        except:
+            print(f"Could not find storage.json in {rp_dir}/stats, skipping.")
+            continue
        
     with open(f"{results_dir}/rp_summary.json", "w") as fp:
         json.dump(summary_GT, fp, indent=2)
     with open(f"{results_dir}/rp_summary_rendered.json", "w") as fp:
         json.dump(summary_rendered, fp, indent=2)
-    with open(f"{results_dir}/rp_summary_info.json", "w") as fp:
-        json.dump(summary_info, fp, indent=2)
 
 
     print(json.dumps(summary_GT, indent=2, ensure_ascii=False))
-
     print(json.dumps(summary_rendered, indent=2, ensure_ascii=False))
     
     print(f"[Summary VS GT] results are saved to: {results_dir}/rp_summary.json")
@@ -74,6 +81,9 @@ def main(results_dir: str):
     df_info = pd.DataFrame.from_dict(summary_info, orient='index')
     df_info.to_csv(f"{results_dir}/rp_summary_info.csv")
     print(f"[Summary Info] results are saved to: {results_dir}/rp_summary_info.csv")
+    df_storage = pd.DataFrame.from_dict(summary_storage, orient='index')
+    df_storage.to_csv(f"{results_dir}/rp_summary_storage.csv")
+    print(f"[Summary Storage] results are saved to: {results_dir}/rp_summary_storage.csv")
 
 if __name__ == "__main__":
     tyro.cli(main)

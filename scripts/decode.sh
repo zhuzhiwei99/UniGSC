@@ -3,30 +3,30 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-09-28 23:42:42
- # @FilePath: /VGSC/scripts/codec_with_1_ply_dir_configs.sh
+ # @LastEditTime: 2025-10-03 20:06:50
+ # @FilePath: /UniGSC/scripts/decode.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
 ### 
 
-# 检查参数数量
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <codec_type> <config_dir> <ply_dir>"
-    echo "  codec_type: type of codec to use (eg. \"vgsc\" or \"gpcc\")"
+# check if the correct number of arguments is provided
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <frame_num> <ply_dir> <codec_type> <config_dir>"
+    echo "  frame_num: number of frames to process (eg. 1, 2, 3, etc.)"
+    echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
+    echo "  codec_type: type of codec to use (eg. 'vgsc' or 'gpcc')"
     echo "  config_dir: path to the directory containing configuration files"
-    echo "  ply_dir: path to the directory containing configuration files"
-    echo "Example: $0 1 bartender configs/video_ffmpeg/anchor_0.0"
+    echo "Example: bash $0 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0"
     exit 1
 fi
 
-codec_type=$1
-config_dir=$2
-ply_dir=$3
+FRAME_NUM=$1
+PLY_DIR=$2
+codec_type=$3
+config_dir=$4
 
-PLY_DIR=$ply_dir
-RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|results|')/${config_dir}
-DATA_DIR=null
+RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|results|')/frame${FRAME_NUM}/${config_dir}
 
 # Function to run a single experiment
 run_experiment() {
@@ -38,18 +38,11 @@ run_experiment() {
     CUDA_VISIBLE_DEVICES=${gpu_id} python gs_pipeline.py \
         $codec_type \
         --config ${config_dir}/${rp_id}.yaml \
-        --pipe_stage codec \
-        --data_factor 1 \
-        --data_dir $DATA_DIR \
+        --pipe_stage decode \
+        --frame_num ${FRAME_NUM} \
         --ply_dir $PLY_DIR \
         --result_dir ${RESULT_DIR}/${rp_id} \
-        --lpips_net vgg \
-        --no-normalize_world_space \
-        --scene_type GSC \
-        --frame_num 1 \
-        --codec.gop_size 1 \
         --codec.save_rec_ply 
-
 }
 
 # Function to automatically detect the best GPU based on available memory

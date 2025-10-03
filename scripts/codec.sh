@@ -3,44 +3,30 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-09-28 18:08:10
- # @FilePath: /VGSC/scripts/decode_and_eval_with_configs.sh
+ # @LastEditTime: 2025-10-02 19:17:06
+ # @FilePath: /UniGSC/scripts/codec.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
 ### 
 
-# 检查参数数量
+# check if the correct number of arguments is provided
 if [ "$#" -ne 4 ]; then
-    echo "Usage: $0 <frame_num> <dataset> <codec_type> <config_dir>"
+    echo "Usage: $0 <frame_num> <ply_dir> <codec_type> <config_dir>"
     echo "  frame_num: number of frames to process (eg. 1, 2, 3, etc.)"
-    echo "  dataset: dataset name (eg. \"bartender, breakfast, cinema, bust\")"
-    echo "  codec_type: type of codec to use (eg. \"vgsc\" or \"gpcc\")"
+    echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
+    echo "  codec_type: type of codec to use (eg. 'vgsc' or 'gpcc')"
     echo "  config_dir: path to the directory containing configuration files"
-    echo "Example: $0 1 bartender configs/video_ffmpeg/anchor_0.0"
+    echo "Example: bash $0 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0"
     exit 1
 fi
 
-frame_num=$1
-dataset=$2
+FRAME_NUM=$1
+PLY_DIR=$2
 codec_type=$3
 config_dir=$4
 
-
-RESULT_DIR=results/GSC_splats/m71763_${dataset}_stable/track/frame${frame_num}/${config_dir}
-
-if [ "$dataset" == "bartender" ]; then
-    test_view_id="$(echo {0..20})"  
-elif [ "$dataset" == "breakfast" ]; then
-    test_view_id="$(echo {0..14})"  
-elif [ "$dataset" == "cinema" ]; then
-    test_view_id="$(echo {0..20})"
-elif [ "$dataset" == "fruit" ]; then
-    test_view_id="$(echo {0..23})"
-else
-    echo "Unknown dataset: $dataset"
-    exit 1
-fi
+RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|results|')/frame${FRAME_NUM}/${config_dir}
 
 
 # Function to run a single experiment
@@ -51,20 +37,13 @@ run_experiment() {
     echo "Starting experiment ${rp_id} on GPU ${gpu_id}"
     
     CUDA_VISIBLE_DEVICES=${gpu_id} python gs_pipeline.py \
-        ${codec_type} \
+        $codec_type \
         --config ${config_dir}/${rp_id}.yaml \
-        --pipe_stage decode_eval \
-        --data_factor 1 \
-        --ply_dir data/GSC_splats/m71763_${dataset}_stable/track \
-        --data_dir data/GSC_splats/m71763_${dataset}_stable/colmap_data \
+        --pipe_stage codec \
+        --ply_dir $PLY_DIR \
         --result_dir ${RESULT_DIR}/${rp_id} \
-        --lpips_net vgg \
-        --no-normalize_world_space \
-        --scene_type GSC \
-        --frame_num ${frame_num} \
-        --test_view_id ${test_view_id} \
+        --frame_num ${FRAME_NUM} \
         --codec.gop_size 16 
-
 }
 
 # Function to automatically detect the best GPU based on available memory
@@ -94,3 +73,7 @@ done
 wait
 
 echo "All experiments completed"
+
+# Run the Python script to generate CSV after all experiments
+python utils/summary/RD_stats_to_csv.py --results_dir ${RESULT_DIR}
+python utils/summary/summarize_stats.py --results_dir $RESULT_DIR 

@@ -3,44 +3,34 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-01 00:49:31
- # @FilePath: /VGSC/scripts/eval_with_result_dirs.sh
+ # @LastEditTime: 2025-10-03 01:33:19
+ # @FilePath: /UniGSC/scripts/eval.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
 ### 
 
-# 检查参数数量
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <frame_num> <dataset> <result_dir>"
+# check if the correct number of arguments is provided
+if [ "$#" -ne 5 ]; then
+    echo "Usage: $0 <frame_num> <scene_type> <data_dir> <ply_dir> <result_dir>"
     echo "  frame_num: number of frames to process (eg. 1, 2, 3, etc.)"
-    echo "  dataset: dataset name (eg. \"bartender, breakfast, cinema, bust\")"
+    echo "  scene_type: type of scene (e.g., 'gsc_dynamic' for an MPEG GSC dynamic scene, 'gsc_static' for an MPEG GSC static scene)"
+    echo "  data_dir:  directory containing images and colmap data (eg. 'data/GSC_splats/m71763_bartender_stable/colmap_data')"
+    echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
     echo "  result_dir: path to the directory containing compressed results"
-    echo "Example: $0 1 bartender results/m71763_bartender_stable/track/frame1/configs/hm/anchor_0.0"
+    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0"
     exit 1
 fi
 
-frame_num=$1
-dataset=$2
-result_dir=$3
+FRAME_NUM=$1
+SCENE_TYPE=$2
+DATA_DIR=$3
+PLY_DIR=$4
+RESULT_DIR=$5
 
-DATA_DIR=data/GSC_splats/m71763_${dataset}_stable/colmap_data 
-PLY_DIR=data/GSC_splats/m71763_${dataset}_stable/track 
-RESULT_DIR=$result_dir
+ORI_RENDER_DIR=$(echo "$PLY_DIR" | sed 's|^data|renders/gsplat|')/frame${FRAME_NUM}
 
-if [ "$dataset" == "bartender" ]; then
-    test_view_id="$(echo {0..20})"  
-elif [ "$dataset" == "breakfast" ]; then
-    test_view_id="$(echo {0..14})"  
-elif [ "$dataset" == "cinema" ]; then
-    test_view_id="$(echo {0..20})"
-elif [ "$dataset" == "fruit" ]; then
-    test_view_id="$(echo {0..23})"
-else
-    echo "Unknown dataset: $dataset"
-    exit 1
-fi
-
+# Default all views as test views, if needed, specify test views via --test_view_id in run_experiment function, e.g., --test_view_id 0 1 2 3 4 5 6 7
 
 # Function to run a single experiment
 run_experiment() {
@@ -55,12 +45,12 @@ run_experiment() {
         --data_factor 1 \
         --data_dir $DATA_DIR \
         --ply_dir $PLY_DIR \
+        --ori_render_dir ${ORI_RENDER_DIR} \
         --result_dir ${RESULT_DIR}/${rp_id} \
         --lpips_net vgg \
         --no-normalize_world_space \
-        --scene_type GSC \
-        --frame_num ${frame_num} \
-        --test_view_id ${test_view_id} \
+        --scene_type $SCENE_TYPE \
+        --frame_num ${FRAME_NUM} \
 
 }
 
@@ -93,5 +83,4 @@ wait
 echo "All experiments completed"
 
 # Run the Python script to generate CSV after all experiments
-python utils/summary/RD_stats_to_csv.py --results_dir ${RESULT_DIR}
 python utils/summary/summarize_stats.py --results_dir $RESULT_DIR 
