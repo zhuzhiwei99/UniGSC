@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-03 23:31:21
+ * @LastEditTime: 2025-10-03 23:46:06
  * @Description: README for UniGSC - Video-based Gaussian Splat Coding
 -->
 
@@ -205,7 +205,7 @@ The full pipeline covers **🗜️ Encoding → 🔄 Decoding → 🎨 Rendering
 | Task | Command |
 |------|---------|
 | Render uncompressed Gaussian Splats | `bash scripts/mpeg/main_render.sh` |
-| Benchmark **MPEG GPCC JEE6.2** | `bash scripts/mpeg/main_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.2` |
+| Benchmark **MPEG GPCC** | `bash scripts/mpeg/main_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.2` |
 | Benchmark **MPEG Video-based GSC** | `bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/151/video/video_anchor_ctc/` |
 | Benchmark **UniGSC-VGSC** | `bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/152/video/UniGSC-VGSC` |
 
@@ -217,7 +217,7 @@ Results will be saved in the `results/` directory.
 | Task | Command |
 |------|---------|
 | Render uncompressed Gaussian Splats | `bash scripts/mpeg/1f_mandatory_render.sh` |
-| Benchmark **MPEG GPCC JEE6.6** | `bash scripts/mpeg/1f_mandatory_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.6` |
+| Benchmark **MPEG GPCC** | `bash scripts/mpeg/1f_mandatory_benchmark.sh gpcc configs/gpcc/mpeg151/jee6.6` |
 | Benchmark **MPEG Video-based GSC** | `bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/151/video/video_anchor_ctc/` |
 | Benchmark **UniGSC-VGSC** | `bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/152/video/UniGSC-VGSC` |
 
