@@ -1,6 +1,7 @@
 # assume torch is already installed
 
 git+https://github.com/JasonLSC/pycolmap.git
+git+https://github.com/fraunhoferhhi/PLAS.git
 numpy<1.26
 scikit-learn
 tqdm
@@ -12,3 +13,6 @@ pyyaml
 matplotlib
 plyfile
 imagecodecs
+gsplat==1.5.2
+pandas
+imageio[ffmpeg]

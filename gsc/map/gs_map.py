@@ -7,7 +7,6 @@ from gsc.map import morton_code
 from gsc import get_logger, bit_split, min_max_normalize
 from gsc.quantize import quantize_torch
 from gsc.quantize.gs_quantize import get_attr_min_range
-from torchpq.clustering import KMeans
 logger = get_logger("Mapper")
 
 
