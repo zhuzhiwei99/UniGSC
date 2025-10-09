@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-09 22:21:04
+ * @LastEditTime: 2025-10-09 23:52:43
  * @Description: README for UniGSC - Video-based Gaussian Splat Coding
 -->
 
@@ -75,7 +75,7 @@ pip install torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https
 
 Install the required packages
 ```bash
-# Install UniGSC 
+# Install gsc 
 pip install .   # Or use `pip install -e .` for editable mode
 # Install additional dependencies
 cd examples
