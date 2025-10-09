@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gsc"
+version = "0.1.0"
+description = "Python package for Gaussian Splats Coding"
+authors = [
+  { name="Zhiwei Zhu", email="zhuzhiwei21@zju.edu.cn" }
+]
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.7"
+dependencies = [
+  "numpy",
+  "torch",
+  "plyfile",
+  "tyro",
+  "pyyaml",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: 3D Reconstruction",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+]
+
+
+[project.urls]
+"Homepage" = "https://github.com/zhuzhiwei99/UniGSC"
+"Source" = "https://github.com/zhuzhiwei99/UniGSC"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["gsc*"]
+exclude = ["tests*", "__pycache__"]
+
+

@@ -1,0 +1,14 @@
+# assume torch is already installed
+
+git+https://github.com/JasonLSC/pycolmap.git
+numpy<1.26
+scikit-learn
+tqdm
+torchmetrics[image]<1.5
+opencv-python
+tyro
+tensorboard
+pyyaml
+matplotlib
+plyfile
+imagecodecs

@@ -1,0 +1,39 @@
+codec: 
+  video_codec_type: hm
+  encoder_path: third_party/video_codec/bin/hm_encoder
+  decoder_path: third_party/video_codec/bin/hm_decoder
+  encode_config_path: third_party/video_codec/cfg/hm/encoder_randomaccess_main_rext.cfg
+  decode_config_path: null
+
+  sort_type: plas
+
+  qp_config:
+    means_l: -1
+    means_u: -1
+    opacities: 16
+    quats_w: 22
+    quats_xyz: 22
+    scales: 22
+    sh0: 16
+    shN_sh1: 28
+    shN_sh2: 34
+    shN_sh3: 40
+  
+  bit_depth_config:
+    means_l: 10
+    means_u: 10
+    opacities: 10
+    quats: 10
+    scales: 10
+    sh0: 10
+    shN: 10
+
+  pix_fmt_config:
+    means_l: yuv444p
+    means_u: yuv444p
+    opacities: yuv400p
+    quats_w: yuv400p
+    quats_xyz: yuv444p
+    scales: yuv444p
+    sh0: yuv444p
+    shN: yuv444p
