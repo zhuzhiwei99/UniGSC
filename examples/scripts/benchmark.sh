@@ -3,7 +3,7 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-10 23:27:59
+ # @LastEditTime: 2025-10-10 23:29:00
  # @FilePath: /UniGSC/examples/scripts/benchmark.sh
  # @Description: 
  # 
@@ -32,7 +32,7 @@ PLY_DIR=$4
 codec_type=$5
 config_dir=$6
 
-RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|results|')/frame${FRAME_NUM}/${config_dir}_trans_shN_pca
+RESULT_DIR=$(echo "$PLY_DIR" | sed 's|^data|results|')/frame${FRAME_NUM}/${config_dir}
 ORI_RENDER_DIR=$(echo "$PLY_DIR" | sed 's|^data|renders/gsplat|')/frame${FRAME_NUM}
 
 # Default all views as test views, if needed, specify test views via --test_view_id in run_experiment function, e.g., --test_view_id 0 1 2 3 4 5 6 7
@@ -58,10 +58,7 @@ run_experiment() {
         --no-normalize_world_space \
         --scene_type $SCENE_TYPE \
         --frame_num ${FRAME_NUM} \
-        --codec.gop_size 16 \
-        --codec.trans_shN_pca 
-
-
+        --codec.gop_size 16 
 }
 
 # Function to automatically detect the best GPU based on available memory
