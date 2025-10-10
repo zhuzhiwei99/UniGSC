@@ -1,10 +1,10 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-09 23:52:43
- * @Description: README for UniGSC - Video-based Gaussian Splat Coding
+ * @LastEditTime: 2025-10-10 16:30:34
+ * @Description: README for UniGSC - Unified Gaussian Splats Codec
 -->
 
-# 🚀 UniGSC: Unified Gaussian Splats Coding Platform
+# 🚀 UniGSC: Unified Gaussian Splats Codec
 
 <!-- [![CI](https://github.com/zhuzhiwei99/UniGSC/actions/workflows/ci.yml/badge.svg)](https://github.com/zhuzhiwei99/UniGSC/actions)
 [![PyPI version](https://img.shields.io/pypi/v/vgsc.svg)](https://pypi.org/project/vgsc/)
@@ -184,7 +184,7 @@ The following commands run the **full pipeline** (🗜️ encoding → 🔄 deco
 #### I-3DGS Main Track
 Automatically process all sequences defined in the MPEG GSC CTC.  
 Results will be saved in the `results/` directory.  
-- Render uncompressed Gaussian Splats:
+- Render uncompressed Gaussian splats:
 ```bash
 bash scripts/mpeg/main_render.sh
 ```
@@ -205,7 +205,7 @@ bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/152/video/video_enhanced
 #### I-3dGS 1 frame Track 
 Automatically process all sequences defined in the MPEG GSC CTC for the **1f track**.
 Results will be saved in the `results/` directory.
-- Render uncompressed Gaussian Splats:
+- Render uncompressed Gaussian splats:
 ```bash
 bash scripts/mpeg/1f_mandatory_render.sh
 ```
@@ -240,7 +240,7 @@ cd examples
 
 | Task | Command |
 |------|---------|
-| Render uncompressed Gaussian Splats | `bash scripts/mpeg/main_render.sh` |
+| Render uncompressed Gaussian splats | `bash scripts/mpeg/main_render.sh` |
 | Benchmark **MPEG GPCC** | `bash scripts/mpeg/main_benchmark.sh gpcc configs/gpcc/mpeg/152/jee6.2` |
 | Benchmark **MPEG video_ctc** | `bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/152/video/video_ctc/` |
 | Benchmark **video_enhanced** | `bash scripts/mpeg/main_benchmark.sh vgsc configs/mpeg/152/video/video_enhanced` |
@@ -252,7 +252,7 @@ Results will be saved in the `results/` directory.
 
 | Task | Command |
 |------|---------|
-| Render uncompressed Gaussian Splats | `bash scripts/mpeg/1f_mandatory_render.sh` |
+| Render uncompressed Gaussian splats | `bash scripts/mpeg/1f_mandatory_render.sh` |
 | Benchmark **MPEG GPCC** | `bash scripts/mpeg/1f_mandatory_benchmark.sh gpcc configs/gpcc/mpeg/152/jee6.6` |
 | Benchmark **MPEG video_ctc** | `bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/152/video/video_ctc/` |
 | Benchmark **video_enhanced** | `bash scripts/mpeg/1f_mandatory_benchmark.sh vgsc configs/mpeg/152/video/video_enhanced` |
@@ -438,7 +438,7 @@ python gs_pipeline.py gpcc --help
 ```
 
 ## 📝 Scripts for Common Workflows
-### ▶️ Run video_enhanced (Video-based Gaussian Splats Codec) 
+### ▶️ Run video_enhanced (Video-based Gaussian splats Codec) 
 Run the UniGSC framework with **FFmpeg** as the video codec. To switch to other codecs (e.g., **HM**), replace `ffmpeg` with `hm`.  
 > FFmpeg: faster; HM: higher compression at the cost of speed.
 
@@ -488,7 +488,7 @@ bash scripts/eval.sh 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colma
 
 
 
-### ▶️ Run MPEG-GPCC (PCC-based Gaussian Splats Codec)
+### ▶️ Run MPEG-GPCC (PCC-based Gaussian splats Codec)
 UniGSC also supports point cloud codecs, e.g., MPEG GPCC (TMC13), allowing Gaussian splats to be compressed as point clouds.
 
 Benchmark the MPEG GPCC codec using:
