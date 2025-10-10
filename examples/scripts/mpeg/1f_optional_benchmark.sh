@@ -3,8 +3,8 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-05 09:37:31
- # @FilePath: /UniGSC/scripts/mpeg/1f_optional_benchmark.sh
+ # @LastEditTime: 2025-10-10 23:27:22
+ # @FilePath: /UniGSC/examples/scripts/mpeg/1f_optional_benchmark.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu, All Rights Reserved. 
@@ -15,8 +15,8 @@
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <CODEC_TYPE> <CONFIG_DIR>"
     echo "  CODEC_TYPE: codec type (e.g., 'vgsc' or 'gpcc')"
-    echo "  CONFIG_DIR: path to configuration directory (e.g., 'configs/mpeg/151/video//video_anchor_ctc')"
-    echo "Example: $0 vgsc configs/mpeg/151/video_anchor_ctc"
+    echo "  CONFIG_DIR: path to configuration directory (e.g., 'configs/mpeg/152/video/video_ctc')"
+    echo "Example: $0 vgsc configs/mpeg/152/video/video_ctc"
     exit 1
 fi
 

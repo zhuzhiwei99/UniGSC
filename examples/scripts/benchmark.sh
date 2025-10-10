@@ -3,8 +3,8 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-03 20:07:11
- # @FilePath: /UniGSC/scripts/benchmark.sh
+ # @LastEditTime: 2025-10-10 23:27:59
+ # @FilePath: /UniGSC/examples/scripts/benchmark.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -19,7 +19,7 @@ if [ "$#" -ne 6 ]; then
     echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
     echo "  codec_type: type of codec to use (eg. 'vgsc' or 'gpcc')"
     echo "  config_dir: path to the directory containing configuration files"
-    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0"
+    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0_10bit"
     exit 1
 fi
 

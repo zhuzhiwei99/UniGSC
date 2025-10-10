@@ -15,8 +15,8 @@
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <CODEC_TYPE> <CONFIG_DIR>"
     echo "  CODEC_TYPE: codec type (e.g., 'vgsc' or 'gpcc')"
-    echo "  CONFIG_DIR: path to configuration directory (e.g., 'configs/mpeg/151/video//video_anchor_ctc')"
-    echo "Example: $0 vgsc configs/mpeg/151/video_anchor_ctc"
+    echo "  CONFIG_DIR: path to configuration directory (e.g., 'configs/mpeg/152/video/video_ctc')"
+    echo "Example: $0 vgsc configs/mpeg/152/video/video_ctc"
     exit 1
 fi
 
