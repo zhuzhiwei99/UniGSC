@@ -17,7 +17,7 @@ from typing_extensions import Literal
 from matplotlib import pyplot as plt
 import pandas as pd
 # dataset
-from datasets.colmap import Dataset, GSCDataset, Parser
+from gsc.datasets.colmap import Dataset, GSCDataset, Parser
 # gsplat
 from gsplat.rendering import rasterization
 from gsplat.strategy import DefaultStrategy, MCMCStrategy
@@ -194,7 +194,7 @@ class Config:
     tb_save_image: bool = False                # Save images to TensorBoard
 
     # ---------------- Dataset / Scene ----------------
-    scene_type: Literal["gsc_static", "gsc_dynamic", "default"] = "default"  # Scene type, default can be used for Mip-NeRF 360, Tanks and Temples, etc.
+    scene_type: Literal["gsc_static", "gsc_dynamic", "default_static", "default_dynamic"] = "default_static"  # Scene type, default_static can be used for Mip-NeRF 360, Tanks and Temples, etc.
     test_view_id: Optional[List[int]] = None    # Test view IDs; if None, use default split
     lpips_net: Literal["vgg", "alex"] = "alex"  # Network for LPIPS metric
     data_dir: str = ""                          # Directory of GT images
@@ -407,8 +407,8 @@ class Runner:
     def set_up_datasets(
         self, data_dir: str, frame_num: int, cfg: Config
     ) -> Tuple[List[Dataset], List[Dataset]]:
-        if self.cfg.scene_type == "gsc_static":
-            assert frame_num == 1, "For gsc_static, frame_num must be 1."
+        if 'static' in self.cfg.scene_type :
+            assert frame_num == 1, "For static scene, frame_num must be 1."
             folders = [data_dir]
         else:
             all_items = sorted(glob.glob(os.path.join(data_dir, "*")))
@@ -424,17 +424,28 @@ class Runner:
                 normalize=cfg.normalize_world_space,
                 test_every=cfg.test_every,
             )
-            trainset = GSCDataset(
-                parser,
-                split="train",
-                patch_size=cfg.patch_size,
-                load_depths=cfg.depth_loss,
-                test_view_ids=cfg.test_view_id,
-            )
-            valset = GSCDataset(
-                parser, 
-                split="val", 
-                test_view_ids=cfg.test_view_id,)                    
+            if 'gsc' in self.cfg.scene_type:
+                trainset = GSCDataset(
+                    parser,
+                    split="train",
+                    patch_size=cfg.patch_size,
+                    load_depths=cfg.depth_loss,
+                    test_view_ids=cfg.test_view_id,
+                )
+                valset = GSCDataset(
+                    parser, 
+                    split="val", 
+                    test_view_ids=cfg.test_view_id,)  
+            else:
+                trainset = Dataset(
+                    parser,
+                    split="train",
+                    patch_size=cfg.patch_size,
+                    load_depths=cfg.depth_loss,
+                )
+                valset = Dataset(
+                    parser, 
+                    split="val",)                    
             trainset_list.append(trainset)
             valset_list.append(valset)
         self.trainset_list = trainset_list

@@ -322,8 +322,10 @@ class Dataset:
         indices = np.arange(len(self.parser.image_names))
         if split == "train":
             self.indices = indices[indices % self.parser.test_every != 0]
+            print(f"[Dataset] train views: {self.indices}")
         else:
             self.indices = indices[indices % self.parser.test_every == 0]
+            print(f"[Dataset] test views: {self.indices}")
 
     def __len__(self):
         return len(self.indices)
