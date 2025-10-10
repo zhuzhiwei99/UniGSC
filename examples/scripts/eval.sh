@@ -18,7 +18,7 @@ if [ "$#" -ne 5 ]; then
     echo "  data_dir:  directory containing images and colmap data (eg. 'data/GSC_splats/m71763_bartender_stable/colmap_data')"
     echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
     echo "  result_dir: path to the directory containing compressed results"
-    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0"
+    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0_10bit"
     exit 1
 fi
 
