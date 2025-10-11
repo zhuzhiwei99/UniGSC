@@ -57,9 +57,6 @@ def eval(runner: Runner, compress_stats=None):
 
         compress_stats = runner.eval(render_stage="compress")
     runner.compare_render_stats(render_stats, compress_stats, name1="Original", name2="Compressed")
-    
-    runner.eval_pngs_with_gsc_ctc_metrics(ref_prefix="val", test_prefix="compress")
-    runner.summary()
 
 
 def encode(runner: Runner):

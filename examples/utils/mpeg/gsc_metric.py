@@ -402,90 +402,155 @@ def get_lpips_calculator(lpips_net: str = "vgg", device: str = "cuda"):
     else:
         raise ValueError(f"Unsupported LPIPS network type: {lpips_net}")
 
-def eval_pngs_with_gsc_ctc_metrics(test_view_id_list: list, 
-                                   ori_render_dir: str, 
-                                   result_dir: str, 
-                                   height: int = 1080, width: int = 1920, 
-                                   ref_prefix: str = "val",
-                                   test_prefix: str = "compress",
-                                   lpips_net: str = "vgg"):
-    
-    resolution = f"{width}x{height}"
 
+def eval_pngs_with_gsc_ctc_metrics(
+    test_view_id_list: list | None,
+    ori_render_dir: str,
+    result_dir: str,
+    ref_prefix: str = "val",
+    test_prefix: str = "compress",
+    lpips_net: str = "vgg",
+    strict_check: bool = True,
+):
+    """
+    Evaluate rendered PNG images with GSC-CTC metrics.
+    Automatically detects:
+      - test_view_id_list (if None)
+      - PNG resolution
+    Checks resolution consistency between reference and rendered frames.
+    """
+
+    render_dir = Path(result_dir) / "renders"
     os.makedirs(f"{result_dir}/log", exist_ok=True)
+    os.makedirs(f"{result_dir}/stats", exist_ok=True)
+
+    # === auto detect test_view_id_list ===
+    if not test_view_id_list:
+        pattern = re.compile(rf"{test_prefix}_frame\d+_testv(\d+)\.png$")
+        test_view_id_list = sorted(
+            {
+                int(m.group(1))
+                for fname in os.listdir(render_dir)
+                if (m := pattern.search(fname))
+            }
+        )
+        if not test_view_id_list:
+            raise FileNotFoundError(
+                f"No PNGs found in {render_dir} matching pattern '{test_prefix}_frame*_testv*.png'"
+            )
 
     gsc_metrics_across_test_views = defaultdict(dict)
-    
-    # Create progress bar
-    pbar = tqdm(range(len(test_view_id_list)), desc="Calculating quality metrics")
-    
-    for i, test_view_id in enumerate(test_view_id_list):
+    pbar = tqdm(test_view_id_list, desc="Calculating MPEG GSC quality metrics")
+
+    for test_view_id in test_view_id_list:
         if ori_render_dir is not None:
-            ref_png_filename = Path(f"{ori_render_dir}/renders/{ref_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png")
+            ref_png_pattern = Path(
+                f"{ori_render_dir}/renders/{ref_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png"
+            )
         else:
-            ref_png_filename = Path(f"{result_dir}/renders/{ref_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png")
-        
-        render_png_filename = Path(f"{result_dir}/renders/{test_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png")
+            ref_png_pattern = Path(
+                f"{result_dir}/renders/{ref_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png"
+            )
+
+        render_png_pattern = Path(
+            f"{result_dir}/renders/{test_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png"
+        )
         saved_log_file = Path(f"{result_dir}/log/QMIV_testv{test_view_id:03d}.txt")
-        
-        # Record QMIV timing
+
+        # === auto detect resolution ===
+        ref_first = str(ref_png_pattern).format(0)
+        render_first = str(render_png_pattern).format(0)
+
+        if not os.path.exists(ref_first) and not os.path.exists(render_first):
+            print(f"[WARN] No PNG found for testv{test_view_id:03d}, skipped.")
+            continue
+
+        with Image.open(ref_first if os.path.exists(ref_first) else render_first) as img:
+            ref_width, ref_height = img.size
+
+        # === check resolution consistency ===
+        if os.path.exists(ref_first) and os.path.exists(render_first):
+            with Image.open(render_first) as img2:
+                render_width, render_height = img2.size
+            if (render_width, render_height) != (ref_width, ref_height):
+                msg = (
+                    f"[ERROR] Resolution mismatch for testv{test_view_id:03d}: "
+                    f"ref={ref_width}x{ref_height}, render={render_width}x{render_height}"
+                )
+                if strict_check:
+                    raise ValueError(msg)
+                else:
+                    print(f"[WARN] {msg} — skipped.")
+                    continue
+
+        resolution = f"{ref_width}x{ref_height}"
+
+        # === compute metrics ===
+        # === QMIV ===
         start_time = time.time()
-        gsc_metrics = run_QMIV_metric_for_pngs(render_png_filename,
-                                            ref_png_filename,
-                                            resolution=resolution,
-                                            saved_log_file=saved_log_file)
+        gsc_metrics = run_QMIV_metric_for_pngs(
+            render_png_pattern,
+            ref_png_pattern,
+            resolution=resolution,
+            saved_log_file=saved_log_file,
+        )
         qmiv_time = time.time() - start_time
-        
-        # Record LPIPS timing
+
+        # === LPIPS ===
         start_time = time.time()
-        lpips_dict = run_LPIPS_for_pngs(render_png_filename,
-                                    ref_png_filename,
-                                    lpips_calculator=get_lpips_calculator(lpips_net))
+        lpips_dict = run_LPIPS_for_pngs(
+            render_png_pattern,
+            ref_png_pattern,
+            lpips_calculator=get_lpips_calculator(lpips_net),
+        )
         lpips_time = time.time() - start_time
-        
+
         gsc_metrics.update(lpips_dict)
         gsc_metrics_across_test_views[f"testv{test_view_id:03d}"] = gsc_metrics
-        
-        # Update progress bar with timing info
+
+        # === update progress bar ===
         pbar.set_postfix({
+            'View': f'{test_view_id:03d}',
             'QMIV': f'{qmiv_time:.1f}s',
             'LPIPS': f'{lpips_time:.1f}s',
             'Total': f'{qmiv_time + lpips_time:.1f}s'
         })
         pbar.update(1)
-    
+
     pbar.close()
 
-    metric_names = gsc_metrics_across_test_views[f"testv{0:03d}"].keys()
+    # === compute average metrics ===
+    metric_names = list(gsc_metrics_across_test_views.values())[0].keys()
     for metric in metric_names:
-        total = sum(gsc_metrics_across_test_views[f"testv{i:03d}"][metric] 
-                for i in range(len(test_view_id_list)))
-        gsc_metrics_across_test_views["average"][metric] = total / len(test_view_id_list)
-    
-    # save quality metrics from each views and average metrics
-    with open(os.path.join(result_dir, "stats", "gsc_metrics.json"), "w") as fp:
+        values = [v[metric] for v in gsc_metrics_across_test_views.values() if metric in v]
+        gsc_metrics_across_test_views["average"][metric] = sum(values) / len(values)
+
+    # === save metrics to JSON ===
+    stats_path = Path(result_dir) / "stats" / "gsc_metrics.json"
+    with open(stats_path, "w") as fp:
         json.dump(gsc_metrics_across_test_views, fp, indent=4)
+
+    print(f"[INFO] Metrics saved to {stats_path}")
+    return gsc_metrics_across_test_views
+      
+
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Run QMIV and LPIPS metrics on rendered PNG sequences")
-    parser.add_argument("--lpips_net", type=str, default="vgg", choices=["alex", "vgg", "squeeze"], help="LPIPS network type")
     parser.add_argument("--ori_render_dir", type=str, default="data/GSC_splats/m71763_bartender_stable/render_gsplat/track", 
                         help="Original render directory for reference images")
     parser.add_argument("--result_dir", type=str, default="results", 
                         help="Directory to save results")
-    parser.add_argument("--height", type=int, default=1080, help="Height of the images")
-    parser.add_argument("--width", type=int, default=1920, help="Width of the images")
     parser.add_argument("--ref_prefix", type=str, default="val", help="Prefix for reference images")
     parser.add_argument("--test_prefix", type=str, default="compress", help="Prefix for test images")
-    parser.add_argument("--test_view_id_list", type=int, nargs='+', default=range(21), help="List of test view IDs to evaluate")
+    parser.add_argument("--test_view_id_list", type=int, nargs='+', default=None, help="List of test view IDs to evaluate")
+    parser.add_argument("--lpips_net", type=str, default="vgg", choices=["alex", "vgg", "squeeze"], help="LPIPS network type")
     args = parser.parse_args()
     eval_pngs_with_gsc_ctc_metrics(
         test_view_id_list=args.test_view_id_list,
         ori_render_dir=args.ori_render_dir,
         result_dir=args.result_dir,
-        height=args.height,
-        width=args.width,
         ref_prefix=args.ref_prefix,
         test_prefix=args.test_prefix,
         lpips_net=args.lpips_net

@@ -17,7 +17,7 @@ if [ "$#" -ne 4 ]; then
     echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
     echo "  codec_type: type of codec to use (eg. 'vgsc' or 'gpcc')"
     echo "  config_dir: path to the directory containing configuration files"
-    echo "Example: bash $0 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0_10bit"
+    echo "Example: bash $0 1 data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0"
     exit 1
 fi
 

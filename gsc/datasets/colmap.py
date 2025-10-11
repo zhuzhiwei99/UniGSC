@@ -322,10 +322,10 @@ class Dataset:
         indices = np.arange(len(self.parser.image_names))
         if split == "train":
             self.indices = indices[indices % self.parser.test_every != 0]
-            print(f"[Dataset] train views: {self.indices}")
+            print(f"[Default Dataset] train views: {self.indices}")
         else:
             self.indices = indices[indices % self.parser.test_every == 0]
-            print(f"[Dataset] test views: {self.indices}")
+            print(f"[Default Dataset] test views: {self.indices}")
 
     def __len__(self):
         return len(self.indices)
@@ -412,11 +412,11 @@ class GSCDataset(Dataset):
         if test_view_ids is None:
             # If no custom test view indices are provided, use the default split from parent class
             if split == "train":   
-                print(f'For {split} dataset, The test view id is not set, useing default train & val split.')
+                print(f'Re-init as [GSCDataset], for {split} stage, The test view id is not set, useing default train & val split.')
                 return
             else:
                 self.indices = np.array(range(len(self.parser.image_names)))
-                print(f'For {split} dataset, The test view id is not set, useing all views as test set: {self.indices}')
+                print(f'Re-init as [GSCDataset], for {split} stage, The test view id is not set, useing all views as test set: {self.indices}')
                 return
         
         # Convert indices to sets for efficient lookup

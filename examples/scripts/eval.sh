@@ -3,8 +3,8 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-03 01:33:19
- # @FilePath: /UniGSC/scripts/eval.sh
+ # @LastEditTime: 2025-10-11 14:01:04
+ # @FilePath: /UniGSC/examples/scripts/eval.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -18,7 +18,7 @@ if [ "$#" -ne 5 ]; then
     echo "  data_dir:  directory containing images and colmap data (eg. 'data/GSC_splats/m71763_bartender_stable/colmap_data')"
     echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
     echo "  result_dir: path to the directory containing compressed results"
-    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0_10bit"
+    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0"
     exit 1
 fi
 
@@ -80,7 +80,18 @@ done
 # Wait for all background processes to complete
 wait
 
-echo "All experiments completed"
+echo "[INFO] All RP experiments are completed"
 
-# Run the Python script to generate CSV after all experiments
-python utils/summary/summarize_stats.py --results_dir $RESULT_DIR 
+echo "[INFO] Evaluating using MPEG GSC CTC metrics..."
+for i in {1..4}; do
+    gpu_id=$(get_best_gpu)
+    rp_id=$(printf "rp%02d" $i)
+    CUDA_VISIBLE_DEVICES=$gpu_id python utils/mpeg/gsc_metric.py \
+    --ori_render_dir $ORI_RENDER_DIR \
+    --result_dir $RESULT_DIR/${rp_id} &
+    sleep 5  # prevent GPU scheduler overload
+done
+wait
+echo "[INFO] All MPEG GSC CTC evaluation are completed"
+
+python utils/summary/summarize_stats.py --results_dir $RESULT_DIR --frame_num $FRAME_NUM

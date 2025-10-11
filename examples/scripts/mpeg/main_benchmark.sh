@@ -3,8 +3,8 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-05 09:37:43
- # @FilePath: /UniGSC/scripts/mpeg/main_benchmark.sh
+ # @LastEditTime: 2025-10-11 13:56:08
+ # @FilePath: /UniGSC/examples/scripts/mpeg/main_benchmark.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu, All Rights Reserved. 
@@ -78,9 +78,21 @@ run_sequence() {
     done
 
     wait
-    echo "[INFO] Sequence $seq completed"
+    echo "[INFO] All RP experiments launched for $seq are completed"
+
+    echo "[INFO] Evaluating $seq using MPEG GSC CTC metrics..."
+    for i in {1..4}; do
+        gpu_id=$(get_best_gpu)
+        rp_id=$(printf "rp%02d" $i)
+        CUDA_VISIBLE_DEVICES=$gpu_id python utils/mpeg/gsc_metric.py \
+            --ori_render_dir renders/${RENDER}${ply_dir#data}/frame${FRAME_NUM} \
+            --result_dir results/${ply_dir#data}/frame${FRAME_NUM}/${CONFIG_DIR}/${rp_id} &
+        sleep 5  # prevent GPU scheduler overload
+    done
+    wait
+    echo "[INFO] All MPEG GSC CTC evaluation for $seq are completed"
     
-    python utils/summary/summarize_stats.py --results_dir "results/${ply_dir#data}/frame${FRAME_NUM}/${CONFIG_DIR}"
+    python utils/summary/summarize_stats.py --results_dir "results/${ply_dir#data}/frame${FRAME_NUM}/${CONFIG_DIR}" --frame_num $FRAME_NUM
 }
 
 # --- Main loop ---

@@ -3,7 +3,7 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-07-04 00:41:56
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-10 23:29:00
+ # @LastEditTime: 2025-10-11 13:54:41
  # @FilePath: /UniGSC/examples/scripts/benchmark.sh
  # @Description: 
  # 
@@ -19,7 +19,7 @@ if [ "$#" -ne 6 ]; then
     echo "  ply_dir: directory containing PLY files (eg. 'data/GSC_splats/m71763_bartender_stable/track')"
     echo "  codec_type: type of codec to use (eg. 'vgsc' or 'gpcc')"
     echo "  config_dir: path to the directory containing configuration files"
-    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0_10bit"
+    echo "Example: bash $0 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track vgsc configs/ffmpeg/anchor_0.0"
     exit 1
 fi
 
@@ -58,7 +58,8 @@ run_experiment() {
         --no-normalize_world_space \
         --scene_type $SCENE_TYPE \
         --frame_num ${FRAME_NUM} \
-        --codec.gop_size 16 
+        --codec.gop_size 16 \
+
 }
 
 # Function to automatically detect the best GPU based on available memory
@@ -87,7 +88,18 @@ done
 # Wait for all background processes to complete
 wait
 
-echo "All experiments completed"
+echo "[INFO] All RP experiments are completed"
 
-# Run the Python script to generate CSV after all experiments
-python utils/summary/summarize_stats.py --results_dir $RESULT_DIR 
+echo "[INFO] Evaluating using MPEG GSC CTC metrics..."
+for i in {1..4}; do
+    gpu_id=$(get_best_gpu)
+    rp_id=$(printf "rp%02d" $i)
+    CUDA_VISIBLE_DEVICES=$gpu_id python utils/mpeg/gsc_metric.py \
+    --ori_render_dir $ORI_RENDER_DIR \
+    --result_dir $RESULT_DIR/${rp_id} &
+    sleep 5  # prevent GPU scheduler overload
+done
+wait
+echo "[INFO] All MPEG GSC CTC evaluation are completed"
+
+python utils/summary/summarize_stats.py --results_dir $RESULT_DIR --frame_num $FRAME_NUM

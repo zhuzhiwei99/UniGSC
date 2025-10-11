@@ -14,8 +14,6 @@ import yaml
 import imagecodecs
 from torch import Tensor
 from typing_extensions import Literal
-from matplotlib import pyplot as plt
-import pandas as pd
 # dataset
 from gsc.datasets.colmap import Dataset, GSCDataset, Parser
 # gsplat
@@ -24,7 +22,6 @@ from gsplat.strategy import DefaultStrategy, MCMCStrategy
 
 # VGSC
 from gsc import set_random_seed, init_logging, get_logger, deep_update_dict
-from gsc.utils.plot import plot_pie, group_data_auto_prefix
 from gsc.utils.file import force_make_dirs, safe_make_dirs, smart_load_meta, smart_save_meta
 from gsc.utils.color import COLOR_SPACE_STANDARD
 from gsc.utils.gs_io import load_ply, save_ply, load_ply_sequence, format_splats
@@ -620,38 +617,7 @@ class Runner:
         self.update_splats_list(full_splats_list_c)
         duration = time.time() - s_time
         self.save_info(duration, "gpcc_dec_time")
-          
-    def run(self):
-        self.logger.info("Starting encoding process...")  
-        load_quantized = self.load_quant_ply_sequences()
-        if not load_quantized:
-            self.load_ply_sequences(self.cfg.ply_dir)
-            if self.cfg.codec.split_type is not None:
-                self.split_blocks()  
-            self.preprocess()
-            self.quantize()
-            
-        if isinstance(self.cfg.codec, VgscCodecConfig):
-            self.vgsc_encode()
-            self.vgsc_decode()
-        elif isinstance(self.cfg.codec, GpccCodecConfig):
-            self.gpcc_encode()
-            self.gpcc_decode()
-        else:
-            raise NotImplementedError(f"{type(self.cfg.codec).__name__} has not been implemented.")
-                
-        self.dequantize()  
-        self.postprocess()
-        
-        if self.cfg.codec.split_type is not None:
-            self.merge_blocks()
-        
-        if self.cfg.codec.save_rec_ply:
-            self.save_ply()
-        else:
-            self.logger.warning("Reconstructed PLY not saved. Set 'save_rec_ply' to True in the codec config to save it.")
-        self.eval(render_stage="compress")
-                                           
+                                          
 
     def rasterize_splats(
         self,
@@ -814,188 +780,6 @@ class Runner:
             json.dump(seq_stats, f, indent=4)        
 
         return seq_stats
-
-    def eval_pngs_with_gsc_ctc_metrics(self, ref_prefix: str = "val", test_prefix: str = "compress"):
-        from utils.mpeg.gsc_metric import run_QMIV_metric_for_pngs, run_LPIPS_for_pngs
-        from pathlib import Path
-        self.set_up_datasets(self.cfg.data_dir, self.frame_num, self.cfg)
-        height, width = self.valset_list[0][0]["image"].shape[0:2]
-        resolution = f"{width}x{height}"
-
-        os.makedirs(f"{self.cfg.result_dir}/log", exist_ok=True)
-
-        gsc_metrics_across_test_views = defaultdict(dict)
-        
-        # Create progress bar
-        pbar = tqdm(range(len(self.cfg.test_view_id)), desc="Calculating quality metrics")
-        
-        for i, test_view_id in enumerate(self.cfg.test_view_id):
-            if self.cfg.ori_render_dir is not None and os.path.exists(self.cfg.ori_render_dir):
-                ref_png_filename = Path(f"{self.cfg.ori_render_dir}/renders/{ref_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png")
-            else:
-                ref_png_filename = Path(f"{self.cfg.result_dir}/renders/{ref_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png")
-            
-            render_png_filename = Path(f"{self.cfg.result_dir}/renders/{test_prefix}_frame{{:03d}}_testv{test_view_id:03d}.png")
-            saved_log_file = Path(f"{self.cfg.result_dir}/log/QMIV_testv{test_view_id:03d}.txt")
-            
-            # Record QMIV timing
-            start_time = time.time()
-            gsc_metrics = run_QMIV_metric_for_pngs(render_png_filename,
-                                                ref_png_filename,
-                                                resolution=resolution,
-                                                saved_log_file=saved_log_file)
-            qmiv_time = time.time() - start_time
-            
-            # Record LPIPS timing
-            start_time = time.time()
-            lpips_dict = run_LPIPS_for_pngs(render_png_filename,
-                                        ref_png_filename,
-                                        lpips_calculator=self.lpips)
-            lpips_time = time.time() - start_time
-            
-            gsc_metrics.update(lpips_dict)
-            gsc_metrics_across_test_views[f"testv{test_view_id:03d}"] = gsc_metrics
-            
-            # Update progress bar with timing info
-            pbar.set_postfix({
-                'QMIV': f'{qmiv_time:.1f}s',
-                'LPIPS': f'{lpips_time:.1f}s',
-                'Total': f'{qmiv_time + lpips_time:.1f}s'
-            })
-            pbar.update(1)
-        
-        pbar.close()
-
-        metric_names = gsc_metrics_across_test_views[f"testv{0:03d}"].keys()
-        for metric in metric_names:
-            total = sum(gsc_metrics_across_test_views[f"testv{i:03d}"][metric] 
-                    for i in range(len(self.cfg.test_view_id)))
-            gsc_metrics_across_test_views["average"][metric] = total / len(self.cfg.test_view_id)
-        
-        # save quality metrics from each views and average metrics
-        with open(os.path.join(self.cfg.result_dir, "stats", "gsc_metrics.json"), "w") as fp:
-            json.dump(gsc_metrics_across_test_views, fp, indent=4)
-
-    def summary(self,):
-        import pandas as pd
-        def format_size(size_bytes):
-            """Convert byte size to readable format (KB, MB, GB, etc.)"""
-            if size_bytes < 1024:
-                return f"{size_bytes} B"
-            elif size_bytes < 1024**2:
-                return f"{size_bytes/1024:.2f} KB"
-            elif size_bytes < 1024**3:
-                return f"{size_bytes/(1024**2):.2f} MB"
-            else:
-                return f"{size_bytes/(1024**3):.2f} GB"
-            
-        ### rate summary
-     
-        # Check if directory exists
-        if not os.path.exists(self.compress_dir):
-            self.logger.info(f"Error: Directory '{self.compress_dir}' does not exist")
-            return
-        
-        # Store file and size information
-        file_sizes = {}
-        total_size = 0
-        
-        for item in os.listdir(self.compress_dir):
-            item_path = os.path.join(self.compress_dir, item)
-            if os.path.isfile(item_path):
-                size = os.path.getsize(item_path)
-                file_sizes[item] = size
-                total_size += size
-
-        file_sizes_grouped = {}
-        for key, value in ATTRIBUTE_MAP.items():
-            size = sum(size for fname, size in file_sizes.items() if fname.startswith(value))
-            file_sizes_grouped[key] = size
-
-        # save to json
-        with open(os.path.join(self.cfg.result_dir, "stats", "storage.json"), "w") as fp:
-            json.dump(file_sizes_grouped, fp, indent=4)
-                # plot pie chart
-        plot_pie(file_sizes_grouped, f"{self.cfg.result_dir}/stats/storage_pie_chart.png", title="Storage")
-
-            
-        # Get bitrate
-        Byte_to_Kbps = lambda filesize, n_frame: filesize / 1024 / n_frame * 8 * 30
-        bitrate_Kbps = Byte_to_Kbps(total_size, self.frame_num)
-        
-        Byte_to_Mbps = lambda filesize, n_frame: filesize / (1024 ** 2) / n_frame * 8 * 30
-        bitrate_Mbps = Byte_to_Mbps(total_size, self.frame_num)
-
-
-        # Calculate percentage
-        percentages = {name: (size / total_size) * 100 for name, size in file_sizes.items()}
-    
-        # Storage breakdown table
-        table_data = []
-        for name, size in sorted(file_sizes.items(), key=lambda x: x[1], reverse=True):
-            size_formatted = format_size(size)
-            percentage = percentages[name]
-            table_data.append([name, size_formatted, f"{percentage:.2f}%"])
-        
-        # Create pandas DataFrame for table
-        df = pd.DataFrame(table_data, columns=["Filename", "Size", "Percentage"])
-        csv_path = os.path.join(self.cfg.result_dir, "stats", "storage_detail.csv")
-        df.to_csv(csv_path, index=False)
-        self.logger.info(f"CSV file saved to: {csv_path}")
-
-        ### distortion summary
-        # compressed vs GT
-        with open(os.path.join(self.cfg.result_dir, "stats", "compress.json"), "r") as fp:
-            quality_metrics = json.load(fp)
-            avg_quality_metrics = quality_metrics["average"]
-        
-        # compressed vs val (before compression vs after compression)
-        with open(os.path.join(self.cfg.result_dir, "stats", "gsc_metrics.json"), "r") as fp:
-            gsc_metrics = json.load(fp)
-            avg_gsc_metrics = gsc_metrics["average"]
-        
-        # save summary into a json file
-        rd_summary_rendered = {key: value for key, value in avg_gsc_metrics.items()}
-        rd_summary_GT = {key: value for key, value in avg_quality_metrics.items() if key != "ellipse_time"}
-        rd_summary_GT["bytes"] = total_size
-        rd_summary_GT["bitrate"] = bitrate_Mbps
-        rd_summary_GT["bitrate_Kbps"] = bitrate_Kbps
-        
-        rd_summary_rendered["bytes"] = total_size
-        rd_summary_rendered["bitrate"] = bitrate_Mbps
-        rd_summary_rendered["bitrate_Kbps"] = bitrate_Kbps
-        
-        
-        with open(os.path.join(self.cfg.result_dir, "rd_summary_GT.json"), "w") as fp:
-            json.dump(rd_summary_GT, fp, indent=4)
-        with open(os.path.join(self.cfg.result_dir, "rd_summary_rendered.json"), "w") as fp:
-            json.dump(rd_summary_rendered, fp, indent=4)
-
-    def stack_render_img_to_vid(self, render_stage_list: List[str] = ["compress", "val"]):
-        # remove existing video files
-        for ext in ["*.mp4", "*.yuv"]:
-            for file in glob.glob(os.path.join(self.cfg.result_dir, "renders", ext)):
-                os.remove(file)
-
-        for render_stage in render_stage_list:
-            for test_view_id in range(len(self.cfg.test_view_id)):
-                # png sequence to mp4 for visualization
-                cmd = (f'ffmpeg -framerate 30 -i "{self.cfg.result_dir}/renders/{render_stage}_frame%03d_testv{test_view_id:03d}.png" '
-                    f'-c:v libx264 -pix_fmt yuv420p -crf 20 -preset medium '
-                    f'-profile:v high -level 4.1 -movflags +faststart "{self.cfg.result_dir}/renders/{render_stage}_testv{test_view_id:03d}.mp4"')
-                
-                self.logger.info(f"Running: {cmd}")
-                os.system(cmd)
-                self.logger.info(f"Video created for {render_stage}, test view {test_view_id}")
-
-                # png sequence to yuv for MPEG GSC metrics (not used for now)
-                cmd = (f'ffmpeg -framerate 30 -i "{self.cfg.result_dir}/renders/{render_stage}_frame%03d_testv{test_view_id:03d}.png" '
-                    f'-c:v rawvideo -pix_fmt yuv420p '
-                    f'"{self.cfg.result_dir}/renders/{render_stage}_testv{test_view_id:03d}.yuv"')
-                
-                self.logger.info(f"Running: {cmd}")
-                os.system(cmd)
-                self.logger.info(f"YUV Video created for {render_stage}, test view {test_view_id}")
     
     def compare_render_stats(self, stats1: Dict, stats2: Dict, name1: str = "Original", name2: str = "Modified") -> None:
         """
@@ -1036,3 +820,30 @@ class Runner:
                 diff_str = f"+{diff:.4f}" if diff > 0 else f"{diff:.4f}"
                 
                 self.logger.info(f"{metric.upper():<8}: {value1:.4f} -> {value2:.4f} ({diff_str})")
+
+          
+    def run(self):
+        self.logger.info("Starting encoding process...")  
+        load_quantized = self.load_quant_ply_sequences()
+        if not load_quantized:
+            self.load_ply_sequences(self.cfg.ply_dir)
+            self.preprocess()
+            self.quantize()
+            
+        if isinstance(self.cfg.codec, VgscCodecConfig):
+            self.vgsc_encode()
+            self.vgsc_decode()
+        elif isinstance(self.cfg.codec, GpccCodecConfig):
+            self.gpcc_encode()
+            self.gpcc_decode()
+        else:
+            raise NotImplementedError(f"{type(self.cfg.codec).__name__} has not been implemented.")
+                
+        self.dequantize()  
+        self.postprocess()
+        
+        if self.cfg.codec.save_rec_ply:
+            self.save_ply()
+        else:
+            self.logger.warning("Reconstructed PLY not saved. Set 'save_rec_ply' to True in the codec config to save it.")
+        self.eval(render_stage="compress")
