@@ -277,41 +277,29 @@ class Runner:
         self.logger.info(f"Logging initialized at {self.log_dir}/gs_{pipe_stage}.log")
     
     def set_up_directories(self, pipe_stage: str) -> None:
-        # Setup output directories.
-        safe_make_dirs(self.cfg.result_dir)
-        self.config_dir = f"{self.cfg.result_dir}/config"
-        safe_make_dirs(self.config_dir)
+        # Setup output directories.           
         self.result_dir = self.cfg.result_dir
-        self.compress_dir = f"{self.result_dir}/compression"
-        self.intermediate_dir = f"{self.result_dir}/intermediate"
-        self.reconstructed_dir = f"{self.result_dir}/reconstructed"
+        self.config_dir = f"{self.cfg.result_dir}/config"  
         self.stats_dir = f"{self.result_dir}/stats"
+        self.render_dir = f"{self.result_dir}/renders"        
+        self.intermediate_dir = f"{self.result_dir}/intermediate"
+        self.compress_dir = f"{self.result_dir}/compression"
+        self.reconstructed_dir = f"{self.result_dir}/reconstructed"
+        
+        safe_make_dirs(self.result_dir)
+        safe_make_dirs(self.config_dir)
         safe_make_dirs(self.stats_dir)
-        self.render_dir = f"{self.result_dir}/renders"
-        if pipe_stage == "codec" or pipe_stage == "benchmark":    
+        safe_make_dirs(self.render_dir)
+        safe_make_dirs(self.intermediate_dir)
+        safe_make_dirs(self.compress_dir)  
+        safe_make_dirs(self.reconstructed_dir)
+        
+        if pipe_stage == "encode" or pipe_stage == "codec" or pipe_stage == "benchmark":   
             force_make_dirs(self.compress_dir)
             force_make_dirs(self.intermediate_dir)
             force_make_dirs(self.reconstructed_dir)
             force_make_dirs(self.stats_dir)
             force_make_dirs(self.render_dir)
-        elif pipe_stage == "encode":
-            force_make_dirs(self.compress_dir)
-            force_make_dirs(self.intermediate_dir)
-            force_make_dirs(self.stats_dir) 
-        elif pipe_stage == "decode" or pipe_stage == "decode_eval":
-            safe_make_dirs(self.reconstructed_dir)      
-        elif pipe_stage == "render":
-            safe_make_dirs(self.render_dir)
-        elif pipe_stage == "preprocess":
-            safe_make_dirs(self.intermediate_dir)
-        elif pipe_stage == "quantize":
-            safe_make_dirs(self.intermediate_dir)
-            safe_make_dirs(self.compress_dir)
-        else:
-            safe_make_dirs(self.compress_dir)
-            safe_make_dirs(self.intermediate_dir)
-            safe_make_dirs(self.reconstructed_dir)
-            safe_make_dirs(self.render_dir)
 
         self.logger.info('Directories set up successfully.')
     

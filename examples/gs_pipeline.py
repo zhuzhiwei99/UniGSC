@@ -21,20 +21,24 @@ def render(runner: Runner):
         runner.eval(render_stage="compress")
         render_stage_list.append("compress")
 
-def eval(runner: Runner, compress_stats=None):  
-    runner.logger.info("Starting evaluation process...")
-    render_stats = None
-
+def eval_original(runner: Runner):
     try:
         runner.logger.info(f"Loading render stats from {runner.cfg.ori_render_dir}/stats/val.json")
         render_stats_json = f"{runner.cfg.ori_render_dir}/stats/val.json"
         with open(render_stats_json, "r") as f:
-            render_stats = json.load(f)
+            ori_stats = json.load(f)
+        return ori_stats
     except FileNotFoundError:
         runner.logger.warning(f"Render stats not found: {render_stats_json}. Rendering uncompressed PLYs for evaluation...")
         runner.logger.info(f"Evaluating uncompressed PLYs from {runner.cfg.ply_dir}")
         runner.load_ply_sequences(runner.cfg.ply_dir)
-        render_stats = runner.eval(render_stage="val")
+        ori_stats = runner.eval(render_stage="val")
+        return ori_stats
+
+
+def eval(runner: Runner, compress_stats=None):  
+    runner.logger.info("Starting evaluation process...")
+    ori_stats = eval_original(runner)
 
     if compress_stats is not None:
         runner.logger.info("Using provided compressed stats for evaluation.")
@@ -56,7 +60,7 @@ def eval(runner: Runner, compress_stats=None):
             runner.logger.info(f"Evaluating compressed PLYs from {runner.reconstructed_dir}") 
 
         compress_stats = runner.eval(render_stage="compress")
-    runner.compare_render_stats(render_stats, compress_stats, name1="Original", name2="Compressed")
+    runner.compare_render_stats(ori_stats, compress_stats, name1="Original", name2="Compressed")
 
 
 def encode(runner: Runner):
@@ -103,8 +107,9 @@ def decode(runner: Runner):
     
 def preprocess(runner: Runner):
     runner.logger.info("Test preprocessing...")
-    runner.load_ply_sequences(runner.cfg.ply_dir)
-    ori_stats = runner.eval(render_stage="val")
+    ori_stats = eval_original(runner)
+    if runner.splats_list is None:
+        runner.load_ply_sequences(runner.cfg.ply_dir)
     runner.preprocess()
     runner.postprocess()
     process_stats = runner.eval(render_stage="processed")
@@ -112,8 +117,9 @@ def preprocess(runner: Runner):
     
 def quantize(runner: Runner):
     runner.logger.info("Test quantization...")
-    runner.load_ply_sequences(runner.cfg.ply_dir)
-    ori_stats = runner.eval(render_stage="val")
+    ori_stats = eval_original(runner)
+    if runner.splats_list is None:
+        runner.load_ply_sequences(runner.cfg.ply_dir)
     runner.quantize()
     runner.dequantize()
     quant_stats = runner.eval(render_stage="quantized")
