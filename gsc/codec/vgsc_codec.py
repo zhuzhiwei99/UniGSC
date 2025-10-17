@@ -2,7 +2,7 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.e:u.cn)
 Date: 2025-07-06 18:28:46?
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-10-05 21:39:43
+LastEditTime: 2025-10-17 11:37:27
 FilePath: /UniGSC/gsc/codec/vgsc_codec.py
 Description: T,e VgscC)dec class provides methods for encoding and decoding splat frames into video bitstreams.
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -31,7 +31,6 @@ from gsc.config import (
     DEFAULT_QP, DEFAULT_BIT_DEPTH  
     )
 from gsc.utils.yuv_io import YUVDataHandler
-from gsc.codec import run_command
 from gsc.codec.video_codec import VideoCodec
 from gsc import get_logger, bit_split
 logger = get_logger("VgscCodec")
@@ -404,7 +403,7 @@ class VgscCodec:
         n_frames = attr_dict["means"].shape[0]
         for attr_name, attr_data in attr_dict.items():
             ori_shape = list(attr_data.shape)
-            new_shape = [n_frames, width, height] + ori_shape[2:]
+            new_shape = [n_frames, height, width] + ori_shape[2:]
             grid_attr_data = attr_data.reshape(new_shape)
             if attr_name == "means" and self.means_no_split is False:
                 l_bit_depth = smart_look_up_dict(self.bit_depth_config, 'means_l')
@@ -414,7 +413,7 @@ class VgscCodec:
                 splats_videos['means_l'] = video_l
                 splats_videos['means_u'] = video_u            
             else:
-                splats_videos[attr_name] = grid_attr_data.view(n_frames, width,  height, -1)  # [T, H, W, C]
+                splats_videos[attr_name] = grid_attr_data.view(n_frames, height, width, -1)  # [T, H, W, C]
         return splats_videos
 
     
