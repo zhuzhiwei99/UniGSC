@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
 Date: 2025-07-06 18:28:46
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-09-24 22:46:56
-FilePath: /VGSC/vgsc/__init__.py
+LastEditTime: 2025-10-20 21:34:10
+FilePath: /release/UniGSC/gsc/__init__.py
 Description: Common utilities and configurations for the VGSC library.
 
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
@@ -11,7 +11,7 @@ Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved.
 
 import torch
 import numpy as np
-from typing import Dict, Literal, List, Tuple, Any
+from typing import Dict, Literal, List, Tuple, Any, Optional
 from torch import Tensor
 import random
 import logging
@@ -247,6 +247,126 @@ def resize_splats(splats: Dict[str, Tensor], target_num: int) -> Dict[str, Tenso
     else:
         logger.warning(f"Resizing splats from {n_splats} to {target_num} by dropping {n_splats - target_num} splats with lowest opacities.")
         return drop_n_splats(splats, n_splats - target_num)
+
+def align_to_multiple(value: int, multiple: int, mode: Literal['ceil', 'floor']='ceil') -> int:
+    """Align a value to the nearest multiple.
+    
+    Args:
+        value (int): The value to be aligned.
+        multiple (int): The multiple to align to.
+        mode (Literal['ceil', 'floor']): Alignment mode, either 'ceil' or 'floor'.
+        
+    Returns:
+        int: The aligned value.
+    """
+    if multiple <= 0:
+        raise ValueError("multiple must be a positive integer.")
+    elif multiple == 1:
+        return value
+    
+    if mode == 'ceil':
+        return ((value + multiple - 1) // multiple) * multiple
+    elif mode == 'floor':
+        return (value // multiple) * multiple
+    else:
+        raise ValueError("mode must be either 'ceil' or 'floor'.")
+
+def resize_splats_list(splats_list: List[Dict[str, Tensor]],
+                        pad: bool=False,
+                        block_size: Optional[int]=1, 
+                        target_num: Optional[int]=None, 
+                        width: Optional[int]=None, 
+                        height: Optional[int]=None) -> Tuple[List[Dict[str, Tensor]], int, int]:
+    """Resize the number of splats in each frame to the target number of splats.
+    
+    Args:
+        splats_list (List[Dict[str, Tensor]]): List of splat dictionaries, each containing attributes like means, quats, etc.
+        target_num (Optional[int]): The target number of splats. If None, use the maximum number of splats in the list.
+    Returns:
+        List[Dict[str, Tensor]]: List of splat dictionaries with the number of splats resized to the target number.
+    """
+    if not splats_list:
+        logger.error("Input splats_list is empty. Cannot resize splats.")
+        return []
+    
+    mode = 'ceil' if pad else 'floor'
+    
+    if block_size is None: block_size = 1 
+    
+    if target_num is None:
+        if pad:
+            target_num = max(splat['means'].shape[0] for splat in splats_list)
+            logger.info(f"target_num is not specified. Mode={mode}. Initial target_num = maximum number of splats in the list: {target_num}.")
+        else:
+            target_num = min(splat['means'].shape[0] for splat in splats_list)
+            logger.info(f"target_num is not specified. Mode={mode}. Initial target_num = minimum number of splats in the list: {target_num}.")
+        
+    if width is not None and height is not None:
+        width = align_to_multiple(width, block_size, mode)
+        height = align_to_multiple(height, block_size, mode)
+        logger.info(f"Given initial width={width}, height={height}, aligned width={width}, height={height}.")
+    elif width is not None and height is None:
+        width = align_to_multiple(width, block_size, mode)
+        target_num = align_to_multiple(target_num, width * block_size, mode)
+        height = int(target_num / width)
+        logger.info(f"Given initial width={width}, aligned width={width}, height={height}.")
+    elif height is not None and width is None:
+        height = align_to_multiple(height, block_size, mode)
+        target_num = align_to_multiple(target_num, height * block_size, mode)
+        width = int(target_num / height)
+        logger.info(f"Given initial height={height}, aligned width={width}, height={height}.")
+    else:
+        if pad:
+            side = int(np.ceil(np.sqrt(target_num)))
+        else:
+            side = int(np.floor(np.sqrt(target_num)))
+        width = align_to_multiple(side, block_size, mode)
+        height = align_to_multiple(side, block_size, mode)
+        logger.info(f"Auto-calculated aligned width={width}, height={height}.")
+        
+    target_num = width * height
+    
+    if pad:       
+        resized_splats_list = [resize_splats(splat, target_num) for splat in splats_list] 
+    else:
+        n_drop = splats_list[0]['means'].shape[0] - target_num
+        resized_splats_list = drop_splats_list(splats_list, n_drop=n_drop, sort_rule='opacties')
+    return resized_splats_list, width, height
+
+
+def drop_splats_list(splats_list: List[Dict[str, Tensor]], n_drop: int,
+                                    sort_rule : Literal['opacties', 'opacities_scales'] ='opacties') -> List[Dict[str, Tensor]]:
+    """Get the indices of splats to be dropped, which have the lowest opacities or opacities * scales across all frames.
+    Args:
+        splats_list (List[Dict[str, Tensor]]): List of splat dictionaries, each containing attributes like means, quats, etc.
+        n_drop (int): Number of splats to drop.
+    Returns:
+        List[Dict[str, Tensor]]: List of splat dictionaries with the lowest n_drop splats removed.
+    """
+    if not splats_list:
+        logger.error("Input splats_list is empty. Cannot get drop indices.")
+        return
+    if n_drop <= 0:
+        logger.info("n_drop is non-positive. No splats will be dropped.")
+        return 
+    splats_dict = splats_list_to_dict(splats_list)
+    if sort_rule == 'opacities_scales':
+        averaged_opacities = splats_dict['opacities'].to(torch.float32).mean(dim=0)
+        averaged_scales = splats_dict['scales'].to(torch.float32).mean(dim=0)
+        combined_metric = torch.sigmoid(averaged_opacities) * torch.exp(averaged_scales)
+        sorted_indices = torch.argsort(combined_metric, descending=True)
+        logger.info("Getting drop indices based on averaged opacities * scales across all frames.")
+    else:
+        averaged_opacities = splats_dict['opacities'].to(torch.float32).mean(dim=0)
+        sorted_indices = torch.argsort(averaged_opacities, descending=True)
+        logger.info("Getting drop indices based on averaged opacities across all frames.")
+        
+    for attr_name, attr_data in splats_dict.items():
+        splats_dict[attr_name] = attr_data[:, sorted_indices[:-n_drop]]
+         
+    splats_list_dropped = splats_dict_to_list(splats_dict)
+    return splats_list_dropped
+
 
 def get_shN_sub_names(max_degree : int) -> List[str]:
     """

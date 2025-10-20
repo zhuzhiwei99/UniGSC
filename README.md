@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-10 16:30:34
+ * @LastEditTime: 2025-10-20 21:43:02
  * @Description: README for UniGSC - Unified Gaussian Splats Codec
 -->
 
@@ -10,11 +10,13 @@
 [![PyPI version](https://img.shields.io/pypi/v/vgsc.svg)](https://pypi.org/project/vgsc/)
 [![Python versions](https://img.shields.io/pypi/pyversions/vgsc.svg)](https://pypi.org/project/vgsc/) -->
 
-![Teaser](./assets/teaser.jpg)
 
+![Teaser](./assets/teaser.jpg)
 
 **UniGSC** is a highly modular and extensible framework for compressing **static and dynamic Gaussian splats**, supporting both video and point cloud codecs. It’s designed for **researchers and developers** to quickly prototype, evaluate, and extend Gaussian Splat compression pipelines.
 
+
+![Pipeline](./assets/pipeline.jpg)
 ---
 
 ## ✨ Highlights
@@ -25,6 +27,7 @@
 - 🛠️ **Comprehensive Tools** for logging, visualization, and benchmarking  
 - 📦 Support for multiple **core codecs** (e.g., video: FFmpeg, HM; pcc: G-PCC.)  
 - 🌐 Built-in support for **MPEG GSC (Gaussian Splat Coding)** workflows  
+
 
 ---
 

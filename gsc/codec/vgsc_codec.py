@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.e:u.cn)
 Date: 2025-07-06 18:28:46?
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-10-17 11:37:27
-FilePath: /UniGSC/gsc/codec/vgsc_codec.py
+LastEditTime: 2025-10-20 21:37:43
+FilePath: /release/UniGSC/gsc/codec/vgsc_codec.py
 Description: T,e VgscC)dec class provides methods for encoding and decoding splat frames into video bitstreams.
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
 '''
@@ -19,7 +19,7 @@ from torch import Tensor
 from gsc import (
     get_dtype_for_bitdepth, 
     get_shN_sub_names, 
-    resize_splats, 
+    resize_splats_list, 
     smart_look_up_dict, 
     splats_list_to_dict,
     splats_dict_to_list,
@@ -47,7 +47,7 @@ class VgscCodec:
     """ 
     # Experimental parameters
     pad: bool = False  # If True, pad splats to a square grid; if False, crop splats to a square grid (recommended)
-
+    block_size: Optional[int] = 8  # Block size for organizing splats into a grid, which may benefit video encoding
     # sort parameters
     sort_type: str = "plas"
     sort_with_shN: bool = True # PLAS sort with shN
@@ -206,42 +206,6 @@ class VgscCodec:
         logger.info("✅ Decompression Process Finished.")
 
         return splats_list
-    
-    def _resize_splats_list(self, splats_list: List[Dict[str, Tensor]], target_num: Optional[int]=None, block_size: Optional[int]=None, pad: bool=False) -> Tuple[List[Dict[str, Tensor]], int]:
-        """Resize the number of splats in each frame to the target number of splats.
-        
-        Args:
-            splats_list (List[Dict[str, Tensor]]): List of splat dictionaries, each containing attributes like means, quats, etc.
-            target_num (Optional[int]): The target number of splats. If None, use the maximum number of splats in the list.
-        Returns:
-            List[Dict[str, Tensor]]: List of splat dictionaries with the number of splats resized to the target number.
-        """
-        if not splats_list:
-            logger.error("Input splats_list is empty. Cannot resize splats.")
-            return []
-        
-        if target_num is None:
-            target_num = max(splat['means'].shape[0] for splat in splats_list)
-        
-        if pad:
-            ### padding splats to a square grid
-            n_sidelen = int(target_num**0.5 + 1)  # Calculate the side length of the square grid
-            if n_sidelen % 8 != 0:
-                n_sidelen = 8 * (n_sidelen // 8 + 1)  # Video codec requires the side length to be a multiple of 8
-            if block_size is not None and n_sidelen % block_size != 0:
-                n_sidelen = block_size * (n_sidelen // block_size + 1)
-        else:
-            ### crop splats to a square grid (recommended)
-            n_sidelen = int(target_num**0.5) 
-            if n_sidelen % 8 != 0:
-                n_sidelen = 8 * (n_sidelen // 8)  # Video codec requires the side length to be a multiple of 8
-            if block_size is not None and n_sidelen % block_size != 0:
-                n_sidelen = block_size * (n_sidelen // block_size)
-            
-        target_num = n_sidelen * n_sidelen  # The target number of splats is the square of the side length
-               
-        resized_splats_list = [resize_splats(splat, target_num) for splat in splats_list]    
-        return resized_splats_list, n_sidelen
 
     
     def _sort_splats(self, splats_to_be_sorted: Dict[str, Tensor]) -> Tensor:
@@ -279,7 +243,7 @@ class VgscCodec:
             int: The side length of the padded square grid of Gaussians.
         """
         # resize the splats to a fixed number of splats
-        splats_list, n_sidelen = self._resize_splats_list(splats_list, pad=self.pad)
+        splats_list, n_sidelen = resize_splats_list(splats_list, pad=self.pad, block_size=self.block_size)
         # splat list to sequence of attributes
         attr_dict = self._splats_list_to_attribute_dict(splats_list)
         if not self.all_intra: # random access

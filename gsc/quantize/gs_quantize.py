@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
 Date: 2025-07-22 11:23:48
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-10-01 00:41:39
-FilePath: /VGSC/vgsc/quantize/gs_quantize.py
+LastEditTime: 2025-10-20 19:59:51
+FilePath: /release/UniGSC/gsc/quantize/gs_quantize.py
 Description: 
 
 Copyright (c) 2025 by Zhiwei Zhu, All Rights Reserved. 
@@ -15,8 +15,11 @@ from torch import Tensor
 import numpy as np
 import os
 from typing import Dict
-from gsc import get_logger, splats_list_to_dict, splats_dict_to_list
+
+from gsc.gs_utils import splats_list_to_dict, splats_dict_to_list
 from gsc.quantize import quantize_torch, dequantize_torch
+
+from gsc import get_logger
 logger = get_logger("Quantizer")
 
 import numpy as np
@@ -26,7 +29,7 @@ def get_attr_min_range(attr_data: Tensor, attr_name: str,
                        min_val=None, range_val=None, max_val=None,
                        quant_per_channel: bool=False,
                        quant_shN_per_channel: bool=False,
-                       keep_spatial: bool=False,):
+                       quant_means_keep_spatial: bool=False,):
     """Calculate the min and range of the attribute data.
     Args:
         attr_data (Tensor): The attribute data tensor. [Num_frames, Num_splats, C, ...]
@@ -39,7 +42,7 @@ def get_attr_min_range(attr_data: Tensor, attr_name: str,
             if max_val is None:
                 max_val = torch.max(attr_data, dim=0).values
             range_val = max_val - min_val
-            if keep_spatial:
+            if quant_means_keep_spatial:
                 range_val = torch.max(range_val)
     elif attr_name == 'shN':
         if quant_shN_per_channel:
@@ -79,12 +82,12 @@ def get_attr_min_range(attr_data: Tensor, attr_name: str,
 def quantize_splats_dict_torch(splats: Dict[str, Tensor], quant_config: Dict,
                                quant_per_channel: bool=False, 
                                quant_shN_per_channel: bool=False,
-                               keep_spatial: bool = False) -> Tuple[Dict[str, Tensor], Dict]:
+                               quant_means_keep_spatial: bool = False) -> Tuple[Dict[str, Tensor], Dict]:
     """Quantizes the splats attributes using the specified quantization configuration.
     Args:
         splats (Dict[str, Tensor]): Dictionary of splats attributes.
         quant_config (Dict): Quantization configuration for each attribute.
-        keep_spatial (bool): Whether to keep the spatial information when calculating range.
+        quant_means_keep_spatial (bool): Whether to keep the spatial information when calculating range.
                              If True, the range is calculated across all spatial dimensions.
                              If False, the range is calculated independently for each spatial dimension.
                              Default is True.
@@ -105,7 +108,7 @@ def quantize_splats_dict_torch(splats: Dict[str, Tensor], quant_config: Dict,
                                                 cfg.get('max', None),
                                                 quant_per_channel,
                                                 quant_shN_per_channel,
-                                                keep_spatial)
+                                                quant_means_keep_spatial)
 
         quant_splats[attr_name] = quantize_torch(attr_data, cfg['bit_depth'], min_val, range_val)  
         quant_meta[attr_name] = {
@@ -179,7 +182,7 @@ def quantize_splats_list_seperately(
     bit_depth_config: Optional[Dict[str, Any]] = None,
     quant_per_channel: bool=False,
     quant_shN_per_channel: bool=False,
-    keep_spatial: bool = False,
+    quant_means_keep_spatial: bool = False,
 ) -> Tuple[List[Dict], List[Dict]]:
     """
     Quantizes a list of splats dictionaries separately and returns the quantized splats and metadata.
@@ -195,10 +198,12 @@ def quantize_splats_list_seperately(
     quant_config = update_quant_bit_depth(quant_config, bit_depth_config)
     
     for i, splats in enumerate(splats_list):
-        quant_splats, quant_meta = quantize_splats_dict_torch(splats, quant_config,
+        splats_dict = splats_list_to_dict([splats])
+        quant_splats, quant_meta = quantize_splats_dict_torch(splats_dict, quant_config,
                                                               quant_per_channel, 
                                                               quant_shN_per_channel,
-                                                              keep_spatial)
+                                                              quant_means_keep_spatial)
+        quant_splats = splats_dict_to_list(quant_splats)[0]
         quant_splats_list.append(quant_splats)
         quant_meta_list.append(quant_meta)
         logger.info(f"Successfully quantized splats {i+1}/{len(splats_list)}")
@@ -219,8 +224,9 @@ def dequantize_splats_list_seperately(
     dequant_splats_list = []
     for i, quant_splats in enumerate(quant_splats_list):
         quant_meta = quant_meta_list[i]
-        splats = dequantize_splats_dict_torch(quant_splats, quant_meta)
-
+        splats_dict = splats_list_to_dict([quant_splats])
+        splats = dequantize_splats_dict_torch(splats_dict, quant_meta)
+        splats = splats_dict_to_list(splats)[0]
         dequant_splats_list.append(splats)
         logger.info(f"Successfully de-quantized splats {i+1}/{len(quant_splats_list)}")
     return dequant_splats_list
@@ -231,7 +237,7 @@ def quantize_splats_list_jointly(
     bit_depth_config: Optional[Dict[str, Any]] = None,
     quant_per_channel: bool=False,
     quant_shN_per_channel: bool=False,
-    keep_spatial: bool = False,
+    quant_means_keep_spatial: bool = False,
 ) -> Tuple[List[Dict], Dict]:
     """
     Quantizes a list of splats dictionaries jointly and saves them to disk.
@@ -249,7 +255,7 @@ def quantize_splats_list_jointly(
     quant_splats, quant_meta = quantize_splats_dict_torch(splats_dict, quant_config, 
                                                           quant_per_channel, 
                                                           quant_shN_per_channel,
-                                                          keep_spatial,)
+                                                          quant_means_keep_spatial,)
 
     quant_splats_list = splats_dict_to_list(quant_splats)
 

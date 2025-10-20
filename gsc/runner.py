@@ -79,7 +79,7 @@ class CodecConfig:
     trans_shN_ycbcr: bool = False                                         # SH AC: RGB → YCbCr
     color_standard: Optional[COLOR_SPACE_STANDARD] = "BT470"                             # Color space standard (MPEG GSC N00677)
     trans_shN_pca: bool = False                                           # Apply PCA on SH AC coefficients
-    shN_rank: int = 21                                                  # PCA rank for SH AC coefficients
+    trans_shN_rank: int = 21                                                    # PCA rank for SH AC coefficients
 
     # Quantization parameters
     quant_type: QUANT_CONFIG_KEYS = "video_N01292"                      # Predefined quantization type
@@ -87,7 +87,7 @@ class CodecConfig:
     quant_config: Optional[Dict[str, Any]] = None                       # Custom quantization config
     quant_per_channel: bool = False                                     # Quantize per channel
     quant_shN_per_channel: bool = False                                 # Quantize SH AC per channel
-    keep_spatial: bool = False                                          # Preserve spatial distribution
+    quant_means_keep_spatial: bool = False                              # Preserve spatial distribution
     quant_seperate: bool = False                                        # Quantize splats separately
     bit_depth_config: Optional[Dict[str, Any]] = None                   # Bit depth config for attributes
 
@@ -124,6 +124,7 @@ class VgscCodecConfig(CodecConfig):
     """
     # Experimental parameters
     pad: bool = False  # If True, pad splats to a square grid; if False, crop splats to a square grid (recommended)
+    block_size: Optional[int] = 8  # Block size for organizing splats into a grid, which may benefit video encoding
     # Sorting parameters
     sort_type: SORT_TYPES = "morton"                                         # Sorting method for better spatial locality
     sort_with_shN: bool = True                                               # Include SHN in PLAS sorting
@@ -146,6 +147,7 @@ class VgscCodecConfig(CodecConfig):
 
     def to_dict(self) -> Dict[str, Any]:
         params_name = [
+            "pad", "block_size",
             "all_intra", "gop_size", "means_no_split",
             'qp_config', 'bit_depth_config', 'pix_fmt_config',
             "sort_type", "sort_with_shN", "weight_dict",
@@ -470,7 +472,7 @@ class Runner:
             splats_list=seq_sh_pca_transform(
                 splats_list=self.splats_list,
                 pca_info_dir=self.compress_dir,
-                rank=self.cfg.codec.shN_rank) 
+                rank=self.cfg.codec.trans_shN_rank) 
             pca_duration = time.time() - pca_s_time
             self.save_info(pca_duration, "PCA_time")    
             self.update_splats_list(splats_list)
@@ -488,7 +490,7 @@ class Runner:
             splats_list = seq_sh_pca_inverse_transform(
                 splats_list=self.splats_list,
                 pca_info_dir=self.compress_dir,
-                rank=self.cfg.codec.shN_rank)
+                rank=self.cfg.codec.trans_shN_rank)
             inverse_pca_duration = time.time() - s_time
             self.save_info(inverse_pca_duration, "Inverse_PCA_time")
             self.update_splats_list(splats_list)
@@ -529,14 +531,14 @@ class Runner:
                                                                      self.cfg.codec.bit_depth_config,
                                                                      self.cfg.codec.quant_per_channel,
                                                                      self.cfg.codec.quant_shN_per_channel,
-                                                                     self.cfg.codec.keep_spatial,)
+                                                                     self.cfg.codec.quant_means_keep_spatial,)
         else:
             quant_splats_list, quant_meta = quantize_splats_list_jointly(self.splats_list, 
                                                                         quant_config, 
                                                                         self.cfg.codec.bit_depth_config,
                                                                         self.cfg.codec.quant_per_channel,
                                                                         self.cfg.codec.quant_shN_per_channel,
-                                                                        self.cfg.codec.keep_spatial,)
+                                                                        self.cfg.codec.quant_means_keep_spatial,)
         self.update_splats_list(quant_splats_list)
 
         duration = time.time() - s_time
