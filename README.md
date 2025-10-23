@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-23 12:16:31
+ * @LastEditTime: 2025-10-23 14:22:03
  * @Description: README for UniGSC - Unified Gaussian Splats Codec
 -->
 
@@ -483,3 +483,7 @@ This project is built upon:
 - [gsplat](https://github.com/nerfstudio-project/gsplat)
 
 Thanks to all the great open-source contributors! ❤️
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=zhuzhiwei99/UniGSC&type=date&legend=top-left)](https://www.star-history.com/#zhuzhiwei99/UniGSC&type=date&legend=top-left)
