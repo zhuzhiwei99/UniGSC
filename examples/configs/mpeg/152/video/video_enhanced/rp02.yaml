@@ -10,7 +10,7 @@ codec:
   
   trans_quats_rod: true
   trans_shN_pca: true
-  shN_rank: 21
+  trans_shN_rank: 21
 
   quant_type: video_N01292
   quant_per_channel: true

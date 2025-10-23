@@ -104,6 +104,17 @@ def main():
             output_root_dir = os.path.join('results/rd_curve', args.output_dir_name, target)
 
         matched_files = search_files(args.root_dir, [f"*{target}*"])
+        
+        matched_files = sorted(matched_files, key=lambda x: os.path.basename(os.path.dirname(x)))
+        # sorted_list = ['GSCodecStudio-ZJU (m74704)', 'VPCC-ByteDance (m74012)', 'VPCC-Nokia (m73977)',  'UniGSC-video_ctc', 'UniGSC-video_enhanced']
+        # sorted_matched_files = []
+        # for name in sorted_list:
+        #     for file in matched_files:
+        #         if name in file:
+        #             sorted_matched_files.append(file)
+        #             print(f"{name}")
+        #             break
+        # matched_files = sorted_matched_files
 
         if not matched_files:
             print("Cannot find any matching files.")

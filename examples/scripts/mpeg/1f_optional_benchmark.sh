@@ -3,7 +3,7 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-11 13:55:59
+ # @LastEditTime: 2025-10-22 23:48:49
  # @FilePath: /UniGSC/examples/scripts/mpeg/1f_optional_benchmark.sh
  # @Description: 
  # 
@@ -26,7 +26,7 @@ CONFIG_DIR=$2
 FRAME_NUM=1
 RENDER=gsplat  # Currently only supports "gsplat", #TODO: add "mpeg-3d-renderer" or "mpeg-gsc-metrics"
 forward_facing_seq=""  # e.g., "bartender cinema" in m73341_pruned_sequences    
-object_centric_seq="Cricket_player LEGO_Bugatti LEGO_Ferrari Plant Solo_Tango_Female Solo_Tango_Male Tango_duo Tennis_player"
+object_centric_seq=" LEGO_Bugatti LEGO_Ferrari Plant Solo_Tango_Female Solo_Tango_Male Tango_duo Tennis_player" # Cricket_player
 
 # --- Utility: find GPU with max free memory ---
 get_best_gpu() {
@@ -66,27 +66,29 @@ run_sequence() {
 
     echo "[INFO] Starting sequence: $seq"
 
-    for i in {1..4}; do
-        gpu_id=$(get_best_gpu)
-        rp_id=$(printf "rp%02d" $i)
+    # for i in {1..4}; do
+    #     gpu_id=$(get_best_gpu)
+    #     rp_id=$(printf "rp%02d" $i)
 
-        if [ -z "$gpu_id" ]; then
-            echo "[WARN] No GPU available, skipping $rp_id"
-            continue
-        fi
+    #     if [ -z "$gpu_id" ]; then
+    #         echo "[WARN] No GPU available, skipping $rp_id"
+    #         continue
+    #     fi
 
-        run_experiment $gpu_id $rp_id $scene_type $ply_dir $data_dir $lpips_net &
-        sleep 10  # prevent GPU scheduler overload
-    done
+    #     run_experiment $gpu_id $rp_id $scene_type $ply_dir $data_dir $lpips_net &
+    #     sleep 10  # prevent GPU scheduler overload
+    # done
 
-    wait
-    echo "[INFO] All RP experiments launched for $seq are completed"
+    # wait
+    # echo "[INFO] All RP experiments launched for $seq are completed"
 
     echo "[INFO] Evaluating $seq using MPEG GSC CTC metrics..."
     for i in {1..4}; do
-        gpu_id=$(get_best_gpu)
+        gpu_id=$(get_best_gpu) 
+        # gpu_id=$(($i % 4))  # assuming first 4 GPUs available
         rp_id=$(printf "rp%02d" $i)
         CUDA_VISIBLE_DEVICES=$gpu_id python utils/mpeg/gsc_metric.py \
+            --lpips_net $lpips_net \
             --ori_render_dir renders/${RENDER}${ply_dir#data}/frame${FRAME_NUM} \
             --result_dir results/${ply_dir#data}/frame${FRAME_NUM}/${CONFIG_DIR}/${rp_id} &
         sleep 5  # prevent GPU scheduler overload
