@@ -13,7 +13,7 @@
 FRAME_NUM=1
 RENDER=gsplat  # Currently only supports "gsplat", #TODO: add "mpeg-3d-renderer" or "mpeg-gsc-metrics"
 forward_facing_seq="bartender breakfast cinema"       
-object_centric_seq="fruit"  
+ 
 
 set -e
 
@@ -76,14 +76,7 @@ for seq in $forward_facing_seq; do
     sleep $sleep_interval
 done
 
-for seq in $object_centric_seq; do
-    wait_for_free_slot
-    run_experiment "$(get_best_gpu)" "gsc_dynamic" \
-        "data/GSC_splats/m71903_bust_dataset/trained_models/${seq}" \
-        "data/GSC_splats/m71903_bust_dataset/colmap_data/${seq}" &
-    sleep $sleep_interval
-done
 
 # Wait for all jobs to finish
 wait
-echo "[INFO] All experiments finished."
+echo "[INFO] All forward-facing render experiments are completed."

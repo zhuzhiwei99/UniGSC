@@ -3,7 +3,7 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-11 13:56:08
+ # @LastEditTime: 2025-10-23 10:52:40
  # @FilePath: /UniGSC/examples/scripts/mpeg/main_benchmark.sh
  # @Description: 
  # 
@@ -24,7 +24,8 @@ CODEC_TYPE=$1
 CONFIG_DIR=$2
 RENDER=gsplat  # Currently only supports "gsplat", #TODO: add "mpeg-3d-renderer" or "mpeg-gsc-metrics"
 forward_facing_seq="bartender breakfast cinema"       
-object_centric_seq="fruit"  
+dynamic_object_centric_seq="fruit"  
+
 
 # --- Utility: find GPU with max free memory ---
 get_best_gpu() {
@@ -37,7 +38,7 @@ get_best_gpu() {
 
 # --- Run one experiment ---
 run_experiment() {
-    local gpu_id=$1 rp_id=$2 scene_type=$3 ply_dir=$4 data_dir=$5 frame_num=$6
+    local gpu_id=$1 rp_id=$2 scene_type=$3 ply_dir=$4 data_dir=$5 frame_num=$6 lpips_net=$7
     local result_dir="results/${ply_dir#data}/frame${FRAME_NUM}/${CONFIG_DIR}"
     local render_dir="renders/${RENDER}${ply_dir#data}/frame${FRAME_NUM}"
 
@@ -52,7 +53,7 @@ run_experiment() {
         --ply_dir $ply_dir \
         --ori_render_dir $render_dir \
         --result_dir ${result_dir}/${rp_id} \
-        --lpips_net vgg \
+        --lpips_net $lpips_net \
         --no-normalize_world_space \
         --scene_type $scene_type \
         --frame_num $frame_num
@@ -60,7 +61,7 @@ run_experiment() {
 
 # --- Launch all experiments for a sequence ---
 run_sequence() {
-    local seq=$1 scene_type=$2 ply_dir=$3 data_dir=$4 frame_num=$5
+    local seq=$1 scene_type=$2 ply_dir=$3 data_dir=$4 frame_num=$5 lpips_net=$6
 
     echo "[INFO] Starting sequence: $seq"
 
@@ -73,7 +74,7 @@ run_sequence() {
             continue
         fi
 
-        run_experiment $gpu_id $rp_id $scene_type $ply_dir $data_dir $frame_num &
+        run_experiment $gpu_id $rp_id $scene_type $ply_dir $data_dir $frame_num $lpips_net &
         sleep 10  # prevent GPU scheduler overload
     done
 
@@ -100,16 +101,19 @@ for seq in $forward_facing_seq; do
     run_sequence "$seq" "gsc_dynamic" \
         "data/GSC_splats/m71763_${seq}_stable/track" \
         "data/GSC_splats/m71763_${seq}_stable/colmap_data" \
-        32 
+        32 \
+        "vgg"
     run_sequence "$seq" "gsc_dynamic" \
         "data/GSC_splats/m71763_${seq}_stable/partially-track" \
         "data/GSC_splats/m71763_${seq}_stable/colmap_data" \
-        32 
+        32 \
+        "vgg"
 done
 
-for seq in $object_centric_seq; do
+for seq in $dynamic_object_centric_seq; do
     run_sequence "$seq" "gsc_dynamic" \
         "data/GSC_splats/m71903_bust_dataset/trained_models/${seq}" \
         "data/GSC_splats/m71903_bust_dataset/colmap_data/${seq}" \
-        300
+        300 \
+        "vgg"
 done

@@ -3,8 +3,8 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-11 13:48:47
- # @FilePath: /UniGSC/examples/scripts/mpeg/1f_mandatory_benchmark.sh
+ # @LastEditTime: 2025-10-23 10:48:14
+ # @FilePath: /UniGSC/examples/scripts/mpeg/1f_object_centric_benchmark.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu, All Rights Reserved. 
@@ -25,8 +25,8 @@ CONFIG_DIR=$2
 
 FRAME_NUM=1
 RENDER=gsplat  # Currently only supports "gsplat", #TODO: add "mpeg-3d-renderer" or "mpeg-gsc-metrics"
-forward_facing_seq="bartender breakfast cinema"       
-object_centric_seq="fruit"  
+dynamic_object_centric_seq="fruit" 
+static_object_centric_seq="Cricket_player LEGO_Bugatti LEGO_Ferrari Plant Solo_Tango_Female Solo_Tango_Male Tango_duo Tennis_player"
 
 # --- Utility: find GPU with max free memory ---
 get_best_gpu() {
@@ -39,7 +39,7 @@ get_best_gpu() {
 
 # --- Run one experiment ---
 run_experiment() {
-    local gpu_id=$1 rp_id=$2 scene_type=$3 ply_dir=$4 data_dir=$5
+    local gpu_id=$1 rp_id=$2 scene_type=$3 ply_dir=$4 data_dir=$5 lpips_net=$6
     local result_dir="results/${ply_dir#data}/frame${FRAME_NUM}/${CONFIG_DIR}"
     local render_dir="renders/${RENDER}${ply_dir#data}/frame${FRAME_NUM}"
 
@@ -54,15 +54,15 @@ run_experiment() {
         --ply_dir $ply_dir \
         --ori_render_dir $render_dir \
         --result_dir ${result_dir}/${rp_id} \
-        --lpips_net vgg \
+        --lpips_net $lpips_net \
         --no-normalize_world_space \
         --scene_type $scene_type \
-        --frame_num $FRAME_NUM 
+        --frame_num $FRAME_NUM
 }
 
 # --- Launch all experiments for a sequence ---
 run_sequence() {
-    local seq=$1 scene_type=$2 ply_dir=$3 data_dir=$4
+    local seq=$1 scene_type=$2 ply_dir=$3 data_dir=$4 lpips_net=$5
 
     echo "[INFO] Starting sequence: $seq"
 
@@ -75,7 +75,7 @@ run_sequence() {
             continue
         fi
 
-        run_experiment $gpu_id $rp_id $scene_type $ply_dir $data_dir &
+        run_experiment $gpu_id $rp_id $scene_type $ply_dir $data_dir $lpips_net &
         sleep 10  # prevent GPU scheduler overload
     done
 
@@ -84,12 +84,14 @@ run_sequence() {
 
     echo "[INFO] Evaluating $seq using MPEG GSC CTC metrics..."
     for i in {1..4}; do
-        gpu_id=$(get_best_gpu)
+        gpu_id=$(get_best_gpu) 
+        # gpu_id=$(($i % 4))  # assuming first 4 GPUs available
         rp_id=$(printf "rp%02d" $i)
         CUDA_VISIBLE_DEVICES=$gpu_id python utils/mpeg/gsc_metric.py \
+            --lpips_net $lpips_net \
             --ori_render_dir renders/${RENDER}${ply_dir#data}/frame${FRAME_NUM} \
             --result_dir results/${ply_dir#data}/frame${FRAME_NUM}/${CONFIG_DIR}/${rp_id} &
-        sleep 5 # prevent GPU scheduler overload
+        sleep 5  # prevent GPU scheduler overload
     done
     wait
     echo "[INFO] All MPEG GSC CTC evaluation for $seq are completed"
@@ -98,17 +100,20 @@ run_sequence() {
 }
 
 # --- Main loop ---
-for seq in $forward_facing_seq; do
-    run_sequence "$seq" "gsc_dynamic" \
-        "data/GSC_splats/m71763_${seq}_stable/track" \
-        "data/GSC_splats/m71763_${seq}_stable/colmap_data"
-    run_sequence "$seq" "gsc_dynamic" \
-        "data/GSC_splats/m71763_${seq}_stable/partially-track" \
-        "data/GSC_splats/m71763_${seq}_stable/colmap_data"
-done
-
-for seq in $object_centric_seq; do
+for seq in $dynamic_object_centric_seq; do
     run_sequence "$seq" "gsc_dynamic" \
         "data/GSC_splats/m71903_bust_dataset/trained_models/${seq}" \
-        "data/GSC_splats/m71903_bust_dataset/colmap_data/${seq}"
+        "data/GSC_splats/m71903_bust_dataset/colmap_data/${seq}" \
+        "vgg"
 done
+
+
+for seq in $static_object_centric_seq; do 
+    run_sequence "$seq" "gsc_static" \
+        "data/GSC_splats/humans_and_objects_1f/${seq}" \
+        "data/GSC_splats/humans_and_objects_1f/${seq}/colmap_SFM" \
+        "alex"
+done
+
+wait
+echo "[INFO] All object-centric benchmark experiments are completed."

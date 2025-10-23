@@ -3,8 +3,8 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-11 12:34:58
- # @FilePath: /VGSC/examples/scripts/mpeg/main_render.sh
+ # @LastEditTime: 2025-10-23 10:51:26
+ # @FilePath: /UniGSC/examples/scripts/mpeg/main_render.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu, All Rights Reserved. 
@@ -12,7 +12,7 @@
 
 RENDER=gsplat  # Currently only supports "gsplat", #TODO: add "mpeg-3d-renderer" or "mpeg-gsc-metrics"
 forward_facing_seq="bartender breakfast cinema"       
-object_centric_seq="fruit"  
+dynamic_object_centric_seq="fruit"  
 
 set -e
 
@@ -78,7 +78,7 @@ for seq in $forward_facing_seq; do
     sleep $sleep_interval 
 done
 
-for seq in $object_centric_seq; do
+for seq in $dynamic_object_centric_seq; do
     wait_for_free_slot
     run_experiment "$(get_best_gpu)" "gsc_dynamic" \
         "data/GSC_splats/m71903_bust_dataset/trained_models/${seq}" \

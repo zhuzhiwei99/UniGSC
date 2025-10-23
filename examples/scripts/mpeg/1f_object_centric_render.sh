@@ -3,8 +3,8 @@
  # @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
  # @Date: 2025-09-30 23:56:15
  # @LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- # @LastEditTime: 2025-10-11 12:33:21
- # @FilePath: /VGSC/examples/scripts/mpeg/1f_optional_render.sh
+ # @LastEditTime: 2025-10-23 10:45:25
+ # @FilePath: /UniGSC/examples/scripts/mpeg/1f_object_centric_render.sh
  # @Description: 
  # 
  # Copyright (c) 2025 by Zhiwei Zhu, All Rights Reserved. 
@@ -12,8 +12,8 @@
 
 FRAME_NUM=1
 RENDER=gsplat  # Currently only supports "gsplat", #TODO: add "mpeg-3d-renderer" or "mpeg-gsc-metrics"
-forward_facing_seq=""  # e.g., "bartender cinema" in m73341_pruned_sequences    
-object_centric_seq="Cricket_player LEGO_Bugatti LEGO_Ferrari Plant Solo_Tango_Female Solo_Tango_Male Tango_duo Tennis_player"
+dynamic_object_centric_seq="fruit" 
+static_object_centric_seq="Cricket_player LEGO_Bugatti LEGO_Ferrari Plant Solo_Tango_Female Solo_Tango_Male Tango_duo Tennis_player"
 
 set -e
 
@@ -62,16 +62,16 @@ run_experiment() {
 
 
 # --- Main loop ---
-for seq in $forward_facing_seq; do
+for seq in $dynamic_object_centric_seq; do
     wait_for_free_slot
     run_experiment "$(get_best_gpu)" "gsc_dynamic" \
-        "data/GSC_splats/m73341_pruned_sequences/${seq}/track_pruned_90/" \
-        "data/GSC_splats/m71763_${seq}_stable/colmap_data" \
+        "data/GSC_splats/m71903_bust_dataset/trained_models/${seq}" \
+        "data/GSC_splats/m71903_bust_dataset/colmap_data/${seq}" \
         "vgg" &
     sleep $sleep_interval
 done
 wait
-for seq in $object_centric_seq; do 
+for seq in $static_object_centric_seq; do 
     wait_for_free_slot
     run_experiment "$(get_best_gpu)" "gsc_static" \
         "data/GSC_splats/humans_and_objects_1f/${seq}" \
@@ -80,4 +80,4 @@ for seq in $object_centric_seq; do
     sleep $sleep_interval
 done
 wait
-echo "[INFO] All experiments finished."
+echo "[INFO] All object-centric render experiments are completed."
