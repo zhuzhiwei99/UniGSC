@@ -1,6 +1,6 @@
 <!--
  * @Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
- * @LastEditTime: 2025-10-23 12:08:39
+ * @LastEditTime: 2025-10-23 12:16:31
  * @Description: README for UniGSC - Unified Gaussian Splats Codec
 -->
 
@@ -69,7 +69,7 @@ pip install -r requirements.txt
 Before running the scripts, make sure your dataset is placed in the `data/` directory and follows the recommended structure shown below:
 
 <details>
-<summary>Static Dataset structure</summary>
+<summary>Static dataset structure</summary>
 
 ```bash
 Static_dataset_name/
@@ -95,7 +95,7 @@ Static_dataset_name/
 
 
 <details>
-<summary>Dynamic Dataset structure</summary>
+<summary>Dynamic dataset structure</summary>
 
 ```bash
 Dynamic_dataset_name/
@@ -177,7 +177,7 @@ Each rate point result includes the following files and directories:
 | 📊 **Evaluate** | ```bashbash scripts/eval.sh 1 gsc_dynamic data/GSC_splats/m71763_bartender_stable/colmap_data data/GSC_splats/m71763_bartender_stable/track results/GSC_splats/m71763_bartender_stable/track/frame1/configs/ffmpeg/anchor_0.0``` |
 
 💡 **Tips:**
-1. If you want get better RD performance, you can use `HM` as the video codec by replacing `ffmpeg` with `hm` in the above commands.
+1. If you want to get better RD performance, you can use `HM` as the video codec by replacing `ffmpeg` with `hm` in the above commands.
 2. For each script, you can add `--help` to see all available options.
 
 
@@ -250,7 +250,7 @@ The full pipeline covers **🗜️ Encoding → 🔄 Decoding → 🎨 Rendering
 ### 🧱 Install Core codecs
 As a Unified Gaussian Splats Coding framework, UniGSC requires core codecs for compression. We currently support FFmpeg, HM, G-PCC. 
 
-We have provided prebuilt binaries for FFmpeg, HM and GPCC under `third_party/video_codec/bin/` directory, which you can use directly. If you prefer to build them from source, please refer to the [installation guide](./docs/install_codec.md).
+We have provided prebuilt binaries for FFmpeg, HM and GPCC under `third_party/video_codec/bin/` directory, which you can use directly. If you prefer to build them from source, please refer to the [Codecs Installation Guide](./docs/install_codec.md).
 
 To use custom codecs, place your encoder and decoder binaries in `third_party/video_codec/bin/` and and update the configuration accordingly.
 
@@ -378,8 +378,8 @@ We provide command-line scripts to encode, decode, render, and evaluate Gaussian
 
 
 🎯 Supported GSCodec Types
-- `vgsc`: Video-based Gaussian Splats Coding 
-- `gpcc`: GPCC-based Gaussian Splats Coding 
+- `vgsc`: Video-based Gaussian Splats Codec 
+- `gpcc`: GPCC-based Gaussian Splats Codec
 
 ▶️ Example Command
 
