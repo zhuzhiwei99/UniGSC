@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
 Date: 2025-07-22 11:23:48
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-10-20 19:59:51
-FilePath: /release/UniGSC/gsc/quantize/gs_quantize.py
+LastEditTime: 2025-11-01 23:52:55
+FilePath: /UniGSC/gsc/quantize/gs_quantize.py
 Description: 
 
 Copyright (c) 2025 by Zhiwei Zhu, All Rights Reserved. 
@@ -16,7 +16,7 @@ import numpy as np
 import os
 from typing import Dict
 
-from gsc.gs_utils import splats_list_to_dict, splats_dict_to_list
+from gsc import splats_list_to_dict, splats_dict_to_list
 from gsc.quantize import quantize_torch, dequantize_torch
 
 from gsc import get_logger

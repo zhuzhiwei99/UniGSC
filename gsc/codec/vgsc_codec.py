@@ -2,8 +2,8 @@
 Author: Zhiwei Zhu (zhuzhiwei21@zju.e:u.cn)
 Date: 2025-07-06 18:28:46?
 LastEditors: Zhiwei Zhu (zhuzhiwei21@zju.edu.cn)
-LastEditTime: 2025-10-20 21:37:43
-FilePath: /release/UniGSC/gsc/codec/vgsc_codec.py
+LastEditTime: 2025-11-01 23:54:37
+FilePath: /UniGSC/gsc/codec/vgsc_codec.py
 Description: T,e VgscC)dec class provides methods for encoding and decoding splat frames into video bitstreams.
 Copyright (c) 2025 by Zhiwei Zhu (zhuzhiwei21@zju.edu.cn), All Rights Reserved. 
 '''
@@ -108,13 +108,12 @@ class VgscCodec:
 
         # 1. Reorganize splats list into attribute videos
         logger.info("Reorganizing splats list into attribute dictionary.")
-        attr_dict, n_sidelen = self._reorganize(splats_list)
-        width = n_sidelen
-        height = n_sidelen
+        attr_dict, width, height = self._reorganize(splats_list)
+
           
         # 2. Convert the attribute dictionary to grid format
         logger.info("Converting attribute dictionary to grid format.")
-        splats_videos = self._attribute_dict_to_grid(attr_dict, n_sidelen, n_sidelen)
+        splats_videos = self._attribute_dict_to_grid(attr_dict, width, height)
         
         # 3. Setup YUV handler and save to YUV
         logger.info("Saving attribute videos to YUV format.")
@@ -235,7 +234,7 @@ class VgscCodec:
         return sorted_indices
 
     
-    def _reorganize(self, splats_list: List[Dict]) -> Tuple[Dict[str, Tensor], int]:
+    def _reorganize(self, splats_list: List[Dict]) -> Tuple[Dict[str, Tensor], int, int]:
         """Reorganize a list of splat dictionaries into a sequence of attributes.
         Args:
             splats_list (List[Dict]): List of splat dictionaries, each containing attributes like means, quats, etc.
@@ -243,7 +242,7 @@ class VgscCodec:
             int: The side length of the padded square grid of Gaussians.
         """
         # resize the splats to a fixed number of splats
-        splats_list, n_sidelen = resize_splats_list(splats_list, pad=self.pad, block_size=self.block_size)
+        splats_list, width, height = resize_splats_list(splats_list, pad=self.pad, block_size=self.block_size)
         # splat list to sequence of attributes
         attr_dict = self._splats_list_to_attribute_dict(splats_list)
         if not self.all_intra: # random access
@@ -268,7 +267,7 @@ class VgscCodec:
                 for attr_name, attr_data in attr_dict.items():
                     attr_dict[attr_name][fr_id] = attr_data[fr_id][sorted_indices, ...]
 
-        return attr_dict, n_sidelen
+        return attr_dict, width, height
     
     def _deorganize(self, attr_dict: Dict[str, Tensor]) -> List[Dict]:
         """_summary_
